@@ -11,6 +11,7 @@ describe('WMd2html', function() {
     let fpIn = `./test/report.md`
     let fpOut = `./test/report.html`
     let opt = {
+        imgWidthMax: '500px',
         // funProcFpOut: (msg) => {
         //     console.log('msg', msg)
         //     return msg.fpOut

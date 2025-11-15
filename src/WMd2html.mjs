@@ -46,6 +46,7 @@ import { markedHighlight } from 'marked-highlight'
  *     let fpIn = `./test/report.md`
  *     let fpOut = `./test/report.html`
  *     let opt = {
+ *         imgWidthMax: '500px',
  *         funProcFpOut: (msg) => {
  *             console.log('msg', msg)
  *             return msg.fpOut
@@ -103,6 +104,12 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     fpInTemp = path.resolve(fpInTemp)
     // console.log('fpInTemp', fpInTemp)
 
+    //imgWidthMax
+    let imgWidthMax = get(opt, 'imgWidthMax', null)
+    if (isnum(imgWidthMax)) {
+        imgWidthMax = `${imgWidthMax}px`
+    }
+
     //funProcFpOut
     let funProcFpOut = get(opt, 'funProcFpOut')
 
@@ -135,8 +142,8 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
                 //儲存圖表名對應圖表號
                 t = v
-                t = replace(t, '<div style="margin:1rem 0;">', '') //div待換成p
-                t = replace(t, '</div>', '') //div待換成p
+                t = replace(t, '<div style="margin:1rem 0;">', '')
+                t = replace(t, '</div>', '')
                 t = replace(t, `${type}n`, '')
                 t = trim(t)
                 t = `{${t}}`
@@ -376,10 +383,32 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         langPrefix: 'hljs language-', //指定給code用的class: class="hljs language-js"
         emptyLangClass: 'hljs', //沒指定語言時的 class
         highlight(code, lang) {
-            const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
+            let language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
             return hljs.highlight(code, { language }).value
         },
     }))
+
+    //擴充renderer
+    let renderer = {
+        image({ href, title, text }) {
+            // console.log('href', href, 'title', title, 'text', text)
+
+            //attrTitle
+            let attrTitle = isestr(title) ? `title="${title}"` : ''
+
+            //st
+            let st = ``
+            if (isestr(imgWidthMax)) {
+                st = `max-width:${imgWidthMax}; height:auto;`
+            }
+
+            //h
+            let h = `<img src="${href}" alt="${text}" ${attrTitle} style="${st}">`
+
+            return h
+        }
+    }
+    marked.use({ renderer })
 
     //mdh
     let mdh = marked.parse(md)
