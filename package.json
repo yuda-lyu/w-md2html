@@ -1,0 +1,35 @@
+{
+  "name": "w-md2html",
+  "version": "1.0.2",
+  "main": "dist/w-md2html.umd.js",
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "katex": "^0.16.25",
+    "lodash-es": "^4.17.21",
+    "marked": "^17.0.0",
+    "marked-footnote": "^1.4.0",
+    "marked-highlight": "^2.2.3",
+    "marked-katex-extension": "^5.1.6",
+    "wsemi": "^1.8.34"
+  },
+  "devDependencies": {
+    "w-package-tools": "^1.1.2"
+  },
+  "scripts": {
+    "test": "mocha --parallel --timeout 60000",
+    "deploy": "gh-pages -d docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuda-lyu/w-md2html.git"
+  },
+  "keywords": [
+    "package",
+    "tool",
+    "markdown",
+    "html",
+    "nodejs"
+  ],
+  "author": "yuda-lyu(semisphere)",
+  "license": "MIT"
+}

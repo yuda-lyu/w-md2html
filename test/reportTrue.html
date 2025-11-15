@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Cache-Control" content="no-siteapp"/>
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>report</title>
+
+    <!-- highlight -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+
+    <style>
+
+.md {
+    font-family: 'Microsoft JhengHei', 'Avenir', 'Helvetica', 'Arial', 'sans-serif';
+    font-size: 12pt;
+}
+
+.md table {
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+    word-break: initial;
+}
+
+.md tr {
+    margin: 0;
+    padding: 0;
+}
+
+.md table tr th {
+    font-weight: bold;
+    background: #eee;
+    border: 1px solid #ddd;
+    border-bottom: 0;
+    margin: 0;
+    padding: 6px 13px;
+}
+
+.md table tr td {
+    font-size: 11pt;
+    border: 1px solid #ddd;
+    margin: 0;
+    padding: 6px 13px;
+}
+
+.md h1 {
+    display: block;
+    font-size: 20pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h2 {
+    display: block;
+    font-size: 16pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h3 {
+    display: block;
+    font-size: 14pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h4 {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h5 {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h6 {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md p {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+} 
+
+.md ol {
+    display: block;
+    list-style-type: decimal;
+    margin: 1rem 0;
+    padding: 0;
+    padding-inline-start: 40px;
+} 
+
+.md li {
+    display: list-item;
+    margin: 0.4rem 0;
+    padding: 0;
+}
+
+.md blockquote {
+    font-style: italic;
+    border-left: 5px solid #debc76;
+    background: #f9f2e3;
+    margin: 1rem 0;
+    padding: 0.1rem 1.0rem 0.1rem 1.0rem;
+}
+
+.md pre {
+    display: block;
+    font-size: 10pt;
+    overflow: auto;
+    background: #eee;
+    margin: 1rem 0;
+    padding: 0;
+}
+.md pre code.hljs {
+    background: transparent !important;
+    line-height: 1.6 !important;
+}
+
+.md code {
+    font-family: Consolas, "Courier New", monospace;
+}
+
+.md a {
+    color: #0066cc;
+    cursor: pointer;
+}
+
+.md a[data-footnote-ref]::before {
+    content: "[";
+}
+.md a[data-footnote-ref]::after {
+    content: "]";
+}
+.md sup:has(a[data-footnote-ref]) {
+    position: relative;
+    vertical-align: baseline; /* 不要推高行距 */
+    top: -0.5em;              /* 往上移動看起來像上標 */
+    line-height: 0;           /* 避免影響行距 */
+}
+.md .footnotes > h2#footnote-label {
+    display: none;
+}
+
+.md hr {
+    margin: 2rem 0;
+    padding: 0;
+}
+
+    </style>
+
+</head>
+<body style="padding:20px; margin:0; overflow-y:auto;">
+
+    <div class="md" id="mdh">
+        <div pretitle style="font-size:14pt; text-align:center;">
+    測試範例
+</div>
+
+<h1>計畫報告</h1>
+<h2>一、摘要</h2>
+<p>本計畫旨在提升 <strong>系統效能</strong> 與 <em>資料處理品質</em>。<br>專案期間共完成三大目標：</p>
+<ol>
+<li>資料流程自動化  </li>
+<li>系統效能優化  </li>
+<li>使用者介面改善</li>
+</ol>
+<blockquote>
+<p>「流程讓人專注，工具讓人加速。」—— 計畫紀錄語</p>
+</blockquote>
+<hr>
+<h2>二、背景與目的</h2>
+<h3>2.1 背景說明</h3>
+<p>隨著資料量逐年增加，需要一套能：</p>
+<ul>
+<li>自動化處理</li>
+<li>智慧化調整</li>
+<li>高效能儲存</li>
+</ul>
+<p>的整合方案。</p>
+<h3>2.2 計畫目的（含核取方塊）</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> 建置自動化流程  </li>
+<li><input checked="" disabled="" type="checkbox"> 建立監控警示  </li>
+<li><input disabled="" type="checkbox"> 完成第三方 API 串接（下一期目標）</li>
+</ul>
+<hr>
+<h2>三、工作項目與進度</h2>
+<h3>3.1 工作項目列表（巢狀清單）</h3>
+<ul>
+<li><strong>資料前處理</strong><ul>
+<li>格式轉換</li>
+<li>欄位標準化</li>
+<li>雜訊清理</li>
+</ul>
+</li>
+<li><strong>資料分析模組</strong><ul>
+<li>統計分析</li>
+<li>時間序列模型  <ul>
+<li>ARIMA</li>
+<li>Prophet</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>視覺化平台</strong><ul>
+<li>儀表板建立</li>
+<li>自訂圖層呈現</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>四、成果內容</h2>
+<h3>4.1 表格測試</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>完成度</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>自動化流程</td>
+<td>100%</td>
+<td>已完成</td>
+</tr>
+<tr>
+<td>系統效能優化</td>
+<td>95%</td>
+<td>尚可持續改善</td>
+</tr>
+<tr>
+<td>介面改善</td>
+<td>80%</td>
+<td>預計下期延伸</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>4.2 程式碼區塊（JavaScript）</h3>
+<pre><code class="hljs language-js"><span class="hljs-keyword">import</span> dayjs <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;dayjs&#x27;</span>
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">calcPerformance</span>(<span class="hljs-params">a, b</span>) {
+  <span class="hljs-keyword">const</span> diff = b - a
+  <span class="hljs-keyword">return</span> {
+    <span class="hljs-attr">start</span>: a,
+    <span class="hljs-attr">end</span>: b,
+    <span class="hljs-attr">improved</span>: diff,
+    <span class="hljs-attr">time</span>: <span class="hljs-title function_">dayjs</span>().<span class="hljs-title function_">format</span>(<span class="hljs-string">&#x27;YYYY-MM-DD HH:mm:ss&#x27;</span>)
+  }
+}
+
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">calcPerformance</span>(<span class="hljs-number">100</span>, <span class="hljs-number">260</span>))
+</code></pre><h3>4.3 程式碼區塊（bash）</h3>
+<pre><code class="hljs language-bash"><span class="hljs-meta">#!/bin/bash</span>
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Start processing...&quot;</span>
+python analyze.py --input=data.json --output=report.csv
+<span class="hljs-built_in">echo</span> <span class="hljs-string">&quot;Done.&quot;</span>
+</code></pre><hr>
+<h2>五、圖片、連結與註腳</h2>
+<h3>5.1 相關連結</h3>
+<ul>
+<li>官方網站：<a href="https://example.com">https://example.com</a>  </li>
+<li>GitHub Repo: <a href="https://github.com/">點我連結</a>  </li>
+<li>參考文獻：見文末註腳<sup><a id="footnote-ref-ref1" href="#footnote-ref1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></li>
+</ul>
+<h3>5.2 圖片插入</h3>
+<p><img src="cocktail.svg" alt="測試圖片"></p>
+<hr>
+<h2>六、結論與後續建議</h2>
+<h3>6.1 成果總結</h3>
+<p>本計畫成功達成主要目標，並建立：</p>
+<ul>
+<li>模組化程式架構  </li>
+<li>可擴充資料處理流程  </li>
+<li>具彈性的視覺化平台</li>
+</ul>
+<h3>6.2 後續建議</h3>
+<ol>
+<li>增加第三方 API 整合  </li>
+<li>加強 AI 模型訓練與部署  </li>
+<li>系統導入自動化測試（CI/CD）</li>
+</ol>
+<hr>
+<h2>七、附錄</h2>
+<h3>7.1 引用區塊層級</h3>
+<blockquote>
+<p>第一層引用  </p>
+<blockquote>
+<p>第二層引用  </p>
+<blockquote>
+<p>第三層引用  </p>
+</blockquote>
+</blockquote>
+</blockquote>
+<hr>
+<h3>7.2 數學公式</h3>
+<p>行內公式：<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">E = mc^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05764em;">E</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord mathnormal">m</span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></p>
+<p>區塊公式：</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>y</mi><mo>=</mo><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi><mi>x</mi><mo>+</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">y = ax^2 + bx + c</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.9474em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">a</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">b</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">c</span></span></span></span></span>
+<hr>
+<h2>註腳</h2>
+<section class="footnotes" data-footnotes>
+<h2 id="footnote-label" class="sr-only">Footnotes</h2>
+<ol>
+<li id="footnote-ref1">
+<p>本註腳示範 Markdown footnote 語法。 <a href="#footnote-ref-ref1" data-footnote-backref aria-label="Back to reference ref1">↩</a></p>
+</li>
+</ol>
+</section>
+
+    </div>
+
+</body>
+</html>
