@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>Global - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#WMd2html">WMd2html</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">Global</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        
+            
+        
+        </h2>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+            
+
+            
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="WMd2html"><span class="type-signature type-signature-async">(async) </span>WMd2html<span class="signature">(fpIn, fpOut, opt<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Markdown檔轉Html檔</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="WMd2html.mjs.html">WMd2html.mjs</a>, <a href="WMd2html.mjs.html#line68">line 68</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>import w from 'wsemi'import WMd2html from './src/WMd2html.mjs'//import WMd2html from 'w-md2html/src/WMd2html.mjs'//import WMd2html from 'w-md2html'async function test() {    let fpIn = `./test/report.md`    let fpOut = `./test/report.html`    let opt = {        funProcFpOut: (msg) => {            console.log('msg', msg)            return msg.fpOut        },    }    let r = await WMd2html(fpIn, fpOut, opt)    console.log(r)    // => ok    w.fsDeleteFile(fpOut)}test()    .catch((err) => {        console.log('catch', err)    })</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fpIn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入來源docx檔位置字串</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fpOut</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入轉出pdf檔位置字串</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>{}</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入設定物件，預設{}</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fdTemp</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'./_convertTempPdf'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入臨時檔位置字串，預設'./_convertTempPdf'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mode</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'MicrosoftOffice'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入執行模式字串，可使用'MicrosoftOffice'與'LibreOffice'，若要使用皆須安裝軟體，預設'MicrosoftOffice'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fpExeLibreOffice</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'C:\\Program Files\\LibreOffice\\program\\soffice.exe'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入若mode='LibreOffice'，須提供LibreOffice執行檔soffice.exe位置字串，預設'C:\Program Files\LibreOffice\program\soffice.exe'</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Sat Nov 15 2025 21:23:12 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>
