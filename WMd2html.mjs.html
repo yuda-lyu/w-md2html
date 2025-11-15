@@ -56,6 +56,7 @@ import join from 'lodash-es/join.js'
 import drop from 'lodash-es/drop.js'
 import dropRight from 'lodash-es/dropRight.js'
 import size from 'lodash-es/size.js'
+import isbol from 'wsemi/src/isbol.mjs'
 import isestr from 'wsemi/src/isestr.mjs'
 import isearr from 'wsemi/src/isearr.mjs'
 import isnum from 'wsemi/src/isnum.mjs'
@@ -63,6 +64,8 @@ import isfun from 'wsemi/src/isfun.mjs'
 import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
 import getFileName from 'wsemi/src/getFileName.mjs'
+import getFileNameExt from 'wsemi/src/getFileNameExt.mjs'
+import getPathParent from 'wsemi/src/getPathParent.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
 import { Marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
@@ -74,12 +77,13 @@ import { markedHighlight } from 'marked-highlight'
 /**
  * Markdown檔轉Html檔
  *
- * @param {String} fpIn 輸入來源docx檔位置字串
- * @param {String} fpOut 輸入轉出pdf檔位置字串
+ * @param {String} fpIn 輸入來源Markdown檔位置字串
+ * @param {String} fpOut 輸入轉出Html檔位置字串
  * @param {Object} [opt={}] 輸入設定物件，預設{}
- * @param {String} [opt.fdTemp='./_convertTempPdf'] 輸入臨時檔位置字串，預設'./_convertTempPdf'
- * @param {String} [opt.mode='MicrosoftOffice'] 輸入執行模式字串，可使用'MicrosoftOffice'與'LibreOffice'，若要使用皆須安裝軟體，預設'MicrosoftOffice'
- * @param {String} [opt.fpExeLibreOffice='C:\\Program Files\\LibreOffice\\program\\soffice.exe'] 輸入若mode='LibreOffice'，須提供LibreOffice執行檔soffice.exe位置字串，預設'C:\\Program Files\\LibreOffice\\program\\soffice.exe'
+ * @param {String} [opt.fpInTemp=] 輸入模板位置字串，預設'./node_modules/w-md2html/src/html.tmp'
+ * @param {Number|String} [opt.imgWidthMax=null] 輸入圖片樣式給予最大寬度，可輸入數字500單位為px，或是字串例如'100%'，預設null
+ * @param {Boolean} [opt.imgConvertToBase64=true] 輸入圖片是否自動轉Base64布林值，預設true
+ * @param {Function} [opt.funProcFpOut=null] 輸入處理輸出檔名函數，預設null
  * @returns {Promise} 回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息
  * @example
  *
@@ -124,6 +128,9 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     fpIn = path.resolve(fpIn)
     // console.log('fpIn', fpIn)
 
+    //fdIn
+    let fdIn = getPathParent(fpIn)
+
     //fpInTemp
     let fpInTemp = get(opt, 'fpInTemp')
     if (!fsIsFile(fpInTemp)) {
@@ -155,6 +162,12 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     let imgWidthMax = get(opt, 'imgWidthMax', null)
     if (isnum(imgWidthMax)) {
         imgWidthMax = `${imgWidthMax}px`
+    }
+
+    //imgConvertToBase64
+    let imgConvertToBase64 = get(opt, 'imgConvertToBase64', null)
+    if (!isbol(imgConvertToBase64)) {
+        imgConvertToBase64 = true
     }
 
     //funProcFpOut
@@ -211,9 +224,34 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return h
     }
 
-    let getPicB64 = (fp) => {
+    let getFileB64 = (fp) => {
         let bitmap = fs.readFileSync(fp)
         return Buffer.from(bitmap).toString('base64')
+    }
+
+    let cvExtToMime = (ext) => {
+        ext = ext.toLowerCase()
+        if (ext === 'png') return 'image/png'
+        if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg'
+        if (ext === 'gif') return 'image/gif'
+        if (ext === 'svg') return 'image/svg+xml'
+        if (ext === 'webp') return 'image/webp'
+        return 'application/octet-stream'
+    }
+
+    let readPicB64 = (fp) => {
+
+        //b64
+        let b64 = getFileB64(fp)
+
+        //mime
+        let mime = cvExtToMime(getFileNameExt(fp))
+
+        //pb64
+        let pb64 = `data:${mime};base64,${b64}`
+        // console.log(fp, 'b64', b64)
+
+        return pb64
     }
 
     let cvPicB64 = (fd, md) => {
@@ -235,8 +273,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
             // console.log('fp', fp)
 
             //pb64
-            let b64 = getPicB64(fp)
-            let pb64 = `data:image/png;base64,${b64}`
+            let pb64 = readPicB64(fp)
             // console.log(fp, 'b64', b64)
 
             s1s = drop(s1s)
@@ -261,6 +298,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
         return tt
     }
+
 
     //fontFamilies
     let fontFamilies = get(opt, 'fontFamilies', [])
@@ -444,13 +482,35 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
             let attrTitle = isestr(title) ? `title="${title}"` : ''
 
             //st
-            let st = ``
+            let st = ''
             if (isestr(imgWidthMax)) {
                 st = `max-width:${imgWidthMax}; height:auto;`
             }
 
+            //hf
+            let hf = href
+            if (imgConvertToBase64) {
+
+                //fpHref
+                let fpHref = path.resolve(fdIn, href)
+                // console.log('fpHref', fpHref)
+
+                //check
+                if (fsIsFile(fpHref)) {
+
+                    //readPicB64
+                    hf = readPicB64(fpHref)
+                    // console.log('hf', hf)
+
+                }
+                else {
+                    console.log(`href[${href}] does not exist`)
+                }
+
+            }
+
             //h
-            let h = `&lt;img src="${href}" alt="${text}" ${attrTitle} style="${st}">`
+            let h = `&lt;img src="${hf}" alt="${text}" ${attrTitle} style="${st}">`
 
             return h
         }
@@ -515,7 +575,7 @@ export default WMd2html
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Sat Nov 15 2025 23:40:53 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Sun Nov 16 2025 00:14:55 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
