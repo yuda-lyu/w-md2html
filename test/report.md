@@ -107,7 +107,7 @@ echo "Done."
 
 ### 5.2 圖片插入
 
-![測試圖片](cocktail.svg)
+![測試圖片](./cocktail.svg)
 
 ---
 

@@ -1,8 +1,8 @@
 import w from 'wsemi'
-// import WMd2html from './src/WMd2html.mjs'
+import WMd2html from './src/WMd2html.mjs'
 //import WMd2html from 'w-md2html/src/WMd2html.mjs'
 //import WMd2html from 'w-md2html'
-import WMd2html from './dist/w-md-2-html.umd.js'
+// import WMd2html from './dist/w-md2html.umd.js'
 
 
 async function test() {
