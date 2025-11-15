@@ -79,7 +79,24 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     //fpInTemp
     let fpInTemp = get(opt, 'fpInTemp')
     if (!fsIsFile(fpInTemp)) {
-        fpInTemp = `./src/html.temp`
+
+        //fpInTempSelf
+        let fpInTempSelf = `./src/html.tmp`
+
+        //fpInTempPkg
+        let fpInTempPkg = `./node_modules/w-md2html/src/html.tmp`
+
+        if (fsIsFile(fpInTempSelf)) {
+            fpInTemp = fpInTempSelf
+        }
+        else if (fsIsFile(fpInTempPkg)) {
+            fpInTemp = fpInTempPkg
+        }
+        else {
+            throw new Error(`fpInTemp[${fpInTemp}] does not exist`)
+        }
+        // console.log('fpInTemp', fpInTemp)
+
     }
 
     //轉絕對路徑
