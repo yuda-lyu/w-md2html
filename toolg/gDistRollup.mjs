@@ -10,7 +10,8 @@ rollupFiles({
     fns: 'WMd2html.mjs',
     fdSrc,
     fdTar,
-    nameDistType: 'kebabCase',
+    hookNameDist: () => 'w-md2html',
+    // nameDistType: 'kebabCase', //直接由hookNameDist給予
     globals: {
         'path': 'path',
         'fs': 'fs',
