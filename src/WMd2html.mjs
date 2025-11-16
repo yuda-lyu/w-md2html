@@ -25,6 +25,7 @@ import markedFootnote from 'marked-footnote'
 import hljs from 'highlight.js'
 import { markedHighlight } from 'marked-highlight'
 import readPicB64 from './readPicB64.mjs'
+import cleanHtml from './cleanHtml.mjs'
 
 
 /**
@@ -501,6 +502,9 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     if (true) {
         h = h.replaceAll(`<li>`, `<li style="margin:7px 0;">`)
     }
+
+    //cleanHtml
+    h = cleanHtml(h)
 
     //funProcFpOut
     if (isfun(funProcFpOut)) {

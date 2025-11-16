@@ -1,8 +1,9 @@
 {
   "name": "w-md2html",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
+    "cheerio": "^1.1.2",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.25",
     "lodash-es": "^4.17.21",

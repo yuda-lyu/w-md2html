@@ -21,6 +21,7 @@ rollupFiles({
         'marked-katex-extension': 'marked-katex-extension',
         'marked-footnote': 'marked-footnote',
         'marked-highlight': 'marked-highlight',
+        'cheerio': 'cheerio',
     },
     external: [
         'path',
@@ -31,6 +32,7 @@ rollupFiles({
         'marked-katex-extension',
         'marked-footnote',
         'marked-highlight',
+        'cheerio',
     ],
 })
 

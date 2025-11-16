@@ -151,6 +151,15 @@ $$
 
 ---
 
+### 7.3 刪除隱藏元素
+
+<div style="margin:1rem 0;">
+    <div style="margin:1rem 0;">顯示文字</div>
+    <div style="margin:1rem 0; display:none;">不能顯示文字</div>
+</div>
+
+---
+
 ## 註腳
 
 [^ref1]: 本註腳示範 Markdown footnote 語法。
