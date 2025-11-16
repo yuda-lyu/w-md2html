@@ -167,12 +167,14 @@
     top: -0.5em;              /* 往上移動看起來像上標 */
     line-height: 0;           /* 避免影響行距 */
 }
-.md .footnotes > h2#footnote-label {
-    display: none;
-}
 
 .md hr {
     margin: 2rem 0;
+    padding: 0;
+}
+
+.md section {
+    margin: 0;
     padding: 0;
 }
 

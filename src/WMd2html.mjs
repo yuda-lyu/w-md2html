@@ -7,7 +7,6 @@ import split from 'lodash-es/split.js'
 import trim from 'lodash-es/trim.js'
 import join from 'lodash-es/join.js'
 import drop from 'lodash-es/drop.js'
-import dropRight from 'lodash-es/dropRight.js'
 import size from 'lodash-es/size.js'
 import isbol from 'wsemi/src/isbol.mjs'
 import isestr from 'wsemi/src/isestr.mjs'
@@ -17,7 +16,7 @@ import isfun from 'wsemi/src/isfun.mjs'
 import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
 import pmSeries from 'wsemi/src/pmSeries.mjs'
-import getFileName from 'wsemi/src/getFileName.mjs'
+import getFileTrueName from 'wsemi/src/getFileTrueName.mjs'
 import getPathParent from 'wsemi/src/getPathParent.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
 import { Marked } from 'marked'
@@ -359,14 +358,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     let tmp = fs.readFileSync(fpInTemp, 'utf8')
 
     //title
-    let title = getFileName(fpIn)
-    title = title.replace('.md', '')
+    let title = getFileTrueName(fpIn)
     // console.log('title', title)
 
     //fdInMd
-    let fdInMd = split(fpIn, '\\')
-    fdInMd = dropRight(fdInMd)
-    fdInMd = join(fdInMd, '\\')
+    let fdInMd = getPathParent(fpIn)
     // console.log('fdInMd', fdInMd)
 
     //md
@@ -393,7 +389,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     //擴充KaTeX
     marked.use(markedKatex({
         throwOnError: false, //不要遇錯就丟例外
-        nonStandard: true, //允許沒有空白的$...$
+        nonStandard: true, //允許單行公式$...$可支援沒有空白格式
     }))
 
     //擴充註腳Footnote
@@ -401,15 +397,15 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
     //擴充highlight
     marked.use(markedHighlight({
-        langPrefix: 'hljs language-', //指定給code用的class: class="hljs language-js"
-        emptyLangClass: 'hljs', //沒指定語言時的 class
+        langPrefix: 'hljs language-', //指定給code用的class為'hljs language-js'
+        emptyLangClass: 'hljs', //沒指定語言時的class
         highlight(code, lang) {
             let language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
             return hljs.highlight(code, { language }).value
         },
     }))
 
-    //擴充renderer
+    //renderer
     let renderer = {
         image: ({ href, title, text }) => {
             // console.log('href', href, 'title', title, 'text', text)
@@ -429,6 +425,8 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
             return h
         },
     }
+
+    //walkTokens
     let walkTokens = async (token) => {
         if (token.type === 'image') {
             if (imgConvertToBase64) {
@@ -457,10 +455,12 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
             }
         }
     }
+
+    //其他擴充
     marked.use({
         async: true,
-        renderer,
-        walkTokens,
+        renderer, //無法使用async
+        walkTokens, //可用async, 圖片轉成base64時因svg轉換須async, 故只能通過walkTokens攔截進行轉換
     })
 
     //mdh
@@ -469,6 +469,8 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
     //tmp
     let h = tmp
+
+    //replace, 模板符號
     h = replace(h, '{html}', mdh)
     h = replace(h, '{title}', title)
     h = replace(h, '{fontFamilies}', fontFamilies)
@@ -489,6 +491,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     h = replace(h, '{textAlignH5}', textAlignH5)
     h = replace(h, '{textAlignH6}', textAlignH6)
     // console.log('h', h)
+
+    //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 強制添加style, 避免轉docx時仍會出現
+    if (true) {
+        h = replace(h, '<h2 id="footnote-label" class="sr-only">Footnotes</h2>', '<h2 id="footnote-label" class="sr-only" style="height:0px; line-height:0px; min-height:0px; overflow:hidden;">Footnotes</h2>')
+    }
 
     //funProcFpOut
     if (isfun(funProcFpOut)) {

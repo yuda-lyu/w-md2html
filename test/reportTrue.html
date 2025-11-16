@@ -167,12 +167,14 @@
     top: -0.5em;              /* 往上移動看起來像上標 */
     line-height: 0;           /* 避免影響行距 */
 }
-.md .footnotes > h2#footnote-label {
-    display: none;
-}
 
 .md hr {
     margin: 2rem 0;
+    padding: 0;
+}
+
+.md section {
+    margin: 0;
     padding: 0;
 }
 
@@ -330,7 +332,7 @@ python analyze.py --input=data.json --output=report.csv
 <hr>
 <h2>註腳</h2>
 <section class="footnotes" data-footnotes>
-<h2 id="footnote-label" class="sr-only">Footnotes</h2>
+<h2 id="footnote-label" class="sr-only" style="height:0px; line-height:0px; min-height:0px; overflow:hidden;">Footnotes</h2>
 <ol>
 <li id="footnote-ref1">
 <p>本註腳示範 Markdown footnote 語法。 <a href="#footnote-ref-ref1" data-footnote-backref aria-label="Back to reference ref1">↩</a></p>
