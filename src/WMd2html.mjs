@@ -16,8 +16,8 @@ import isnum from 'wsemi/src/isnum.mjs'
 import isfun from 'wsemi/src/isfun.mjs'
 import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
+import pmSeries from 'wsemi/src/pmSeries.mjs'
 import getFileName from 'wsemi/src/getFileName.mjs'
-import getFileNameExt from 'wsemi/src/getFileNameExt.mjs'
 import getPathParent from 'wsemi/src/getPathParent.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
 import { Marked } from 'marked'
@@ -25,6 +25,7 @@ import markedKatex from 'marked-katex-extension'
 import markedFootnote from 'marked-footnote'
 import hljs from 'highlight.js'
 import { markedHighlight } from 'marked-highlight'
+import readPicB64 from './readPicB64.mjs'
 
 
 /**
@@ -177,40 +178,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return h
     }
 
-    let getFileB64 = (fp) => {
-        let bitmap = fs.readFileSync(fp)
-        return Buffer.from(bitmap).toString('base64')
-    }
+    let cvPicB64 = async (fd, md) => {
 
-    let cvExtToMime = (ext) => {
-        ext = ext.toLowerCase()
-        if (ext === 'png') return 'image/png'
-        if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg'
-        if (ext === 'gif') return 'image/gif'
-        if (ext === 'svg') return 'image/svg+xml'
-        if (ext === 'webp') return 'image/webp'
-        return 'application/octet-stream'
-    }
+        let gsrc = async (c) => {
 
-    let readPicB64 = (fp) => {
-
-        //b64
-        let b64 = getFileB64(fp)
-
-        //mime
-        let mime = cvExtToMime(getFileNameExt(fp))
-
-        //pb64
-        let pb64 = `data:${mime};base64,${b64}`
-        // console.log(fp, 'b64', b64)
-
-        return pb64
-    }
-
-    let cvPicB64 = (fd, md) => {
-
-        let gsrc = (c) => {
-
+            //s1s
             let s = split(c, 'src="')
             if (size(s) !== 2) {
                 throw new Error(`size(s)!==2`)
@@ -221,14 +193,26 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
             //fp
             let fnp = s1s[0]
+            let fp = ''
+            if (fsIsFile(fnp)) {
+                fp = fnp
+            }
+            else {
+                fp = `${fd}/${fnp}`
+                if (!fsIsFile(fp)) {
+                    console.log('c', c)
+                    console.log('fnp', fnp)
+                    throw new Error(`fp[${fp}] does not exist`)
+                }
+            }
             // console.log('fnp', fnp)
-            let fp = `${fd}/${fnp}`
             // console.log('fp', fp)
 
             //pb64
-            let pb64 = readPicB64(fp)
+            let pb64 = await readPicB64(fp)
             // console.log(fp, 'b64', b64)
 
+            //drop
             s1s = drop(s1s)
 
             //merge
@@ -239,10 +223,10 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
         let tt = []
         let s = split(md, '\n')
-        each(s, (v) => {
+        await pmSeries(s, async (v) => {
             let b = v.indexOf('src="') >= 0
             if (b) {
-                v = gsrc(v)
+                v = await gsrc(v)
             // console.log(v)
             }
             tt.push(v)
@@ -251,7 +235,6 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
         return tt
     }
-
 
     //fontFamilies
     let fontFamilies = get(opt, 'fontFamilies', [])
@@ -402,7 +385,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     // console.log(md)
 
     //cvPicB64
-    md = cvPicB64(fdInMd, md)
+    md = await cvPicB64(fdInMd, md)
 
     //marked
     let marked = new Marked()
@@ -428,7 +411,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
     //擴充renderer
     let renderer = {
-        image({ href, title, text }) {
+        image: ({ href, title, text }) => {
             // console.log('href', href, 'title', title, 'text', text)
 
             //attrTitle
@@ -440,38 +423,48 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
                 st = `max-width:${imgWidthMax}; height:auto;`
             }
 
-            //hf
-            let hf = href
-            if (imgConvertToBase64) {
-
-                //fpHref
-                let fpHref = path.resolve(fdIn, href)
-                // console.log('fpHref', fpHref)
-
-                //check
-                if (fsIsFile(fpHref)) {
-
-                    //readPicB64
-                    hf = readPicB64(fpHref)
-                    // console.log('hf', hf)
-
-                }
-                else {
-                    console.log(`href[${href}] does not exist`)
-                }
-
-            }
-
             //h
-            let h = `<img src="${hf}" alt="${text}" ${attrTitle} style="${st}">`
+            let h = `<img src="${href}" alt="${text}" ${attrTitle} style="${st}">`
 
             return h
+        },
+    }
+    let walkTokens = async (token) => {
+        if (token.type === 'image') {
+            if (imgConvertToBase64) {
+                try {
+
+                    //fpHref
+                    let fpHref = path.resolve(fdIn, token.href)
+                    // console.log('fpHref', fpHref)
+
+                    //check
+                    if (fsIsFile(fpHref)) {
+
+                        //readPicB64
+                        token.href = await readPicB64(fpHref)
+                        // console.log('hf', hf)
+
+                    }
+                    else {
+                        console.log(`href[${token.href}] does not exist`)
+                    }
+
+                }
+                catch (err) {
+                    console.log(err)
+                }
+            }
         }
     }
-    marked.use({ renderer })
+    marked.use({
+        async: true,
+        renderer,
+        walkTokens,
+    })
 
     //mdh
-    let mdh = marked.parse(md)
+    let mdh = await marked.parse(md)
     // console.log('h', h)
 
     //tmp

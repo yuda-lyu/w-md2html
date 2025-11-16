@@ -21,7 +21,7 @@ async function test() {
     console.log(r)
     // => ok
 
-    // w.fsDeleteFile(fpOut)
+    w.fsDeleteFile(fpOut)
 
 }
 test()

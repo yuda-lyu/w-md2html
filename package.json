@@ -1,6 +1,6 @@
 {
   "name": "w-md2html",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "highlight.js": "^11.11.1",
@@ -10,6 +10,7 @@
     "marked-footnote": "^1.4.0",
     "marked-highlight": "^2.2.3",
     "marked-katex-extension": "^5.1.6",
+    "sharp": "^0.34.5",
     "wsemi": "^1.8.34"
   },
   "devDependencies": {
