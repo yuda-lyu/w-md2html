@@ -15,10 +15,22 @@ rollupFiles({
     globals: {
         'path': 'path',
         'fs': 'fs',
+        'sharp': 'sharp',
+        'highlight.js': 'highlight.js',
+        'marked': 'marked',
+        'marked-katex-extension': 'marked-katex-extension',
+        'marked-footnote': 'marked-footnote',
+        'marked-highlight': 'marked-highlight',
     },
     external: [
         'path',
         'fs',
+        'sharp',
+        'highlight.js',
+        'marked',
+        'marked-katex-extension',
+        'marked-footnote',
+        'marked-highlight',
     ],
 })
 
