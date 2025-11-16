@@ -497,7 +497,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         h = replace(h, '<h2 id="footnote-label" class="sr-only">Footnotes</h2>', '<h2 id="footnote-label" class="sr-only" style="height:0px; line-height:0px; min-height:0px; overflow:hidden;">Footnotes</h2>')
     }
 
-    //li不能於head給予style, 無法轉docx, 改為個別給予style
+    //li不能於head給予style, 無法轉docx, 改為個別給予style, 且margin不支援rem, 故給px
     if (true) {
         h = h.replaceAll(`<li>`, `<li style="margin:7px 0;">`)
     }
