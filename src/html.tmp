@@ -26,6 +26,8 @@
     margin: 0;
     padding: 0;
     word-break: initial;
+    font-family: {fontFamilies};
+    font-size: {fontSizeTab};
 }
 
 .md tr {
@@ -43,7 +45,6 @@
 }
 
 .md table tr td {
-    font-size: {fontSizeTab};
     border: 1px solid #ddd;
     margin: 0;
     padding: 6px 13px;
