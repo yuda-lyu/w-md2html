@@ -121,8 +121,8 @@
 
 .md li {
     display: list-item;
-    /* margin: 0.4rem 0; */
-    /* padding: 0; */
+    /* margin: 0.4rem 0; */ /* 須個別元素用style給予才能用於docx */
+    padding: 0;
 }
 
 .md blockquote {
