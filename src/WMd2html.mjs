@@ -151,13 +151,12 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
             let vv = v
             if (v.indexOf(`${type}n`) >= 0) {
                 i++
-                let t
 
-                //填入圖表號
+                //填入圖表編號
                 vv = replace(v, `${type}n`, `${type}${i}`)
 
                 //儲存圖表名對應之圖表編號
-                t = v
+                let t = v
                 t = html2str(t)
                 t = replace(t, `${type}n`, '')
                 t = trim(t)
