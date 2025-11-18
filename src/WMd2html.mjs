@@ -19,12 +19,12 @@ import pmSeries from 'wsemi/src/pmSeries.mjs'
 import getFileTrueName from 'wsemi/src/getFileTrueName.mjs'
 import getPathParent from 'wsemi/src/getPathParent.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
+import wi from 'w-image-proc'
 import { Marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
 import markedFootnote from 'marked-footnote'
 import hljs from 'highlight.js'
 import { markedHighlight } from 'marked-highlight'
-import readPicB64 from './readPicB64.mjs'
 import cleanHtml from './cleanHtml.mjs'
 
 
@@ -209,7 +209,8 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
             // console.log('fp', fp)
 
             //pb64
-            let pb64 = await readPicB64(fp)
+            // let pb64 = await readPicB64(fp)
+            let pb64 = await wi.base64(fp, 'png')
             // console.log(fp, 'b64', b64)
 
             //drop
@@ -441,7 +442,8 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
                     if (fsIsFile(fpHref)) {
 
                         //readPicB64
-                        token.href = await readPicB64(fpHref)
+                        // token.href = await readPicB64(fpHref)
+                        token.href = await wi.base64(fpHref, 'png')
                         // console.log('hf', hf)
 
                     }

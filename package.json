@@ -1,6 +1,6 @@
 {
   "name": "w-md2html",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "cheerio": "^1.1.2",
@@ -11,7 +11,7 @@
     "marked-footnote": "^1.4.0",
     "marked-highlight": "^2.2.3",
     "marked-katex-extension": "^5.1.6",
-    "sharp": "^0.34.5",
+    "w-image-proc": "^1.0.2",
     "wsemi": "^1.8.34"
   },
   "devDependencies": {
