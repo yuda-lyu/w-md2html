@@ -13,6 +13,7 @@ import isestr from 'wsemi/src/isestr.mjs'
 import isearr from 'wsemi/src/isearr.mjs'
 import isnum from 'wsemi/src/isnum.mjs'
 import isfun from 'wsemi/src/isfun.mjs'
+import ispm from 'wsemi/src/ispm.mjs'
 import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
 import pmSeries from 'wsemi/src/pmSeries.mjs'
@@ -37,7 +38,7 @@ import cleanHtml from './cleanHtml.mjs'
  * @param {String} [opt.fpInTemp=] 輸入模板位置字串，預設'./node_modules/w-md2html/src/html.tmp'
  * @param {Number|String} [opt.imgWidthMax=null] 輸入圖片樣式給予最大寬度，可輸入數字500單位為px，或是字串例如'100%'，預設null
  * @param {Boolean} [opt.imgConvertToBase64=true] 輸入圖片是否自動轉Base64布林值，預設true
- * @param {Function} [opt.funProcFpOut=null] 輸入處理輸出檔名函數，預設null
+ * @param {Function} [opt.funProcFpOut=null] 輸入處理輸出檔名函數，函數會傳入{fpOut,pretitle}，分別為原始輸出檔位置與提取Markdown內pretitle區文字，預設null
  * @returns {Promise} 回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息
  * @example
  *
@@ -511,6 +512,9 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     //funProcFpOut
     if (isfun(funProcFpOut)) {
         fpOut = funProcFpOut({ fpOut, pretitle })
+        if (ispm(fpOut)) {
+            fpOut = await fpOut
+        }
     }
     // console.log('fpOut', fpOut)
 
