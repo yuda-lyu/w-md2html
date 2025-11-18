@@ -243,6 +243,12 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return tt
     }
 
+    //tableBorderColor
+    let tableBorderColor = get(opt, 'tableBorderColor', '')
+    if (!isestr(tableBorderColor)) {
+        tableBorderColor = '#666'
+    }
+
     //fontFamilies
     let fontFamilies = get(opt, 'fontFamilies', [])
     if (!isearr(fontFamilies)) {
@@ -499,6 +505,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     h = replace(h, '{textAlignH4}', textAlignH4)
     h = replace(h, '{textAlignH5}', textAlignH5)
     h = replace(h, '{textAlignH6}', textAlignH6)
+    h = replace(h, '{tableBorderColor}', tableBorderColor)
     // console.log('h', h)
 
     //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於cleanHtml被清除
