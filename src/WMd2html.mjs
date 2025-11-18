@@ -16,6 +16,7 @@ import isfun from 'wsemi/src/isfun.mjs'
 import ispm from 'wsemi/src/ispm.mjs'
 import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
+import html2str from 'wsemi/src/html2str.mjs'
 import pmSeries from 'wsemi/src/pmSeries.mjs'
 import getFileTrueName from 'wsemi/src/getFileTrueName.mjs'
 import getPathParent from 'wsemi/src/getPathParent.mjs'
@@ -155,10 +156,9 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
                 //填入圖表號
                 vv = replace(v, `${type}n`, `${type}${i}`)
 
-                //儲存圖表名對應圖表號
+                //儲存圖表名對應之圖表編號
                 t = v
-                t = replace(t, '<div style="margin:1rem 0;">', '')
-                t = replace(t, '</div>', '')
+                t = html2str(t)
                 t = replace(t, `${type}n`, '')
                 t = trim(t)
                 t = `{${t}}`
@@ -172,7 +172,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         //取代圖表名為對應圖表號
         let h = join(rs, '\n')
         each(kp, (v, k) => {
-        // h = replace(h, k, v)
+            // h = replace(h, k, v)
             h = h.replaceAll(k, v)
         })
 
