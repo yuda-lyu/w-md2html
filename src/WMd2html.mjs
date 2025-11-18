@@ -152,8 +152,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
             if (v.indexOf(`${type}n`) >= 0) {
                 i++
 
-                //填入圖表編號
-                vv = replace(v, `${type}n`, `${type}${i}`)
+                //圖表編號
+                let nn = `${type}${i}`
+
+                //更新成圖表編號
+                vv = replace(v, `${type}n`, nn)
 
                 //儲存圖表名對應之圖表編號
                 let t = v
@@ -161,14 +164,17 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
                 t = replace(t, `${type}n`, '')
                 t = trim(t)
                 t = `{${t}}`
-                kp[t] = `${type}${i}`
+                kp[t] = nn
                 // console.log(t, '-->', kp[t])
 
             }
+
+            //儲存圖表編號
             rs.push(vv)
+
         })
 
-        //取代圖表名為對應圖表號
+        //取代圖表名為對應圖表編號
         let h = join(rs, '\n')
         each(kp, (v, k) => {
             // h = replace(h, k, v)
