@@ -2,11 +2,11 @@
 import * as cheerio from 'cheerio'
 
 
-let cleanHtml = (html) => {
-    const $ = cheerio.load(html)
+let htmlClean = (html) => {
+    let $ = cheerio.load(html)
     $('[style*="display:none"]').remove()
     return $.html()
 }
 
 
-export default cleanHtml
+export default htmlClean

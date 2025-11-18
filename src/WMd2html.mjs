@@ -27,7 +27,8 @@ import markedKatex from 'marked-katex-extension'
 import markedFootnote from 'marked-footnote'
 import hljs from 'highlight.js'
 import { markedHighlight } from 'marked-highlight'
-import cleanHtml from './cleanHtml.mjs'
+import htmlRemovePInLi from './htmlRemovePInLi.mjs'
+import htmlClean from './htmlClean.mjs'
 
 
 /**
@@ -508,7 +509,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     h = replace(h, '{tableBorderColor}', tableBorderColor)
     // console.log('h', h)
 
-    //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於cleanHtml被清除
+    //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於htmlClean被清除
     if (true) {
         h = replace(h, '<h2 id="footnote-label" class="sr-only">Footnotes</h2>', '<h2 id="footnote-label" class="sr-only" style="height:0px; line-height:0px; min-height:0px; overflow:hidden;">Footnotes</h2>')
     }
@@ -527,8 +528,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         `)
     }
 
-    //cleanHtml
-    h = cleanHtml(h)
+    //htmlRemovePInLi
+    h = htmlRemovePInLi(h)
+
+    //htmlClean
+    h = htmlClean(h)
 
     //funProcFpOut
     if (isfun(funProcFpOut)) {
