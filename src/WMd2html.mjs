@@ -506,6 +506,15 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         h = h.replaceAll(`<li>`, `<li style="margin:7px 0;">`)
     }
 
+    //特殊標記<docx_br>, 於html內不顯示, 於docx內為換行符號, 提供docx撐開列距之用
+    if (true) {
+        h = h.replaceAll(`<docx_br>`, `
+<div style="height:0; overflow:hidden;">
+    <br>
+</div>    
+        `)
+    }
+
     //cleanHtml
     h = cleanHtml(h)
 
