@@ -1,13 +1,13 @@
 {
   "name": "w-md2html",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "cheerio": "^1.1.2",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.25",
     "lodash-es": "^4.17.21",
-    "marked": "^17.0.0",
+    "marked": "^17.0.1",
     "marked-footnote": "^1.4.0",
     "marked-highlight": "^2.2.3",
     "marked-katex-extension": "^5.1.6",

@@ -27,7 +27,7 @@ import markedKatex from 'marked-katex-extension'
 import markedFootnote from 'marked-footnote'
 import hljs from 'highlight.js'
 import { markedHighlight } from 'marked-highlight'
-import htmlRemovePInLi from './htmlRemovePInLi.mjs'
+// import htmlRemovePInLi from './htmlRemovePInLi.mjs'
 import htmlClean from './htmlClean.mjs'
 
 
@@ -528,8 +528,8 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         `)
     }
 
-    //htmlRemovePInLi
-    h = htmlRemovePInLi(h)
+    // //htmlRemovePInLi
+    // h = htmlRemovePInLi(h)
 
     //htmlClean
     h = htmlClean(h)
