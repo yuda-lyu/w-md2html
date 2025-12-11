@@ -10,7 +10,7 @@ let fdTar = './dist'
 async function rp() {
 
     await rollupFiles({ //rollupFiles預設會clean folder
-        fn: 'WMd2html.mjs',
+        fns: 'WMd2html.mjs',
         fdSrc,
         fdTar,
         hookNameDist: () => 'w-md2html',
