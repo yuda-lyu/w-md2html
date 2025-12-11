@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-tw">
+
+    <head>
+        <meta http-equiv="content-type" content="text/html charset=UTF-8" />
+        <title>md2html</title>
+
+        <!-- @babel/polyfill已廢棄 -->
+        <script nomodule src="https://cdn.jsdelivr.net/npm/@babel/polyfill@7.12.1/dist/polyfill.min.js"></script>
+        
+        <script src="https://cdn.jsdelivr.net/npm/wsemi/dist/wsemi.umd.js"></script>
+    
+        <script src="../dist/md2html.umd.js"></script>
+
+    </head>
+
+    <body style="margin:0px; padding:0px;">
+
+        <div style="display:flex; padding:10px;">
+
+            <textarea id="markdown" style="width:500px; height:calc( 96svh - 8px );" oninput="rdr()">
+
+# 計畫報告
+
+## 一、摘要
+
+本計畫旨在提升 **系統效能** 與 *資料處理品質*。  
+專案期間共完成三大目標：
+
+1. 資料流程自動化
+2. 系統效能優化
+3. 使用者介面改善
+
+> 「流程讓人專注，工具讓人加速。」—— 計畫紀錄語
+
+---
+
+## 二、背景與目的
+
+### 2.1 背景說明
+
+隨著資料量逐年增加，需要一套能：
+
+- 自動化處理
+- 智慧化調整
+- 高效能儲存
+
+的整合方案。
+
+### 2.2 計畫目的（含核取方塊）
+
+- [x] 建置自動化流程  
+- [x] 建立監控警示  
+- [ ] 完成第三方 API 串接（下一期目標）
+
+---
+
+## 三、工作項目與進度
+
+### 3.1 工作項目列表
+
+測試無序巢狀清單
+
+- **資料前處理**
+- 格式轉換
+- 欄位標準化
+- 雜訊清理
+
+- **資料分析模組**
+- 統計分析
+- 時間序列模型
+- ARIMA
+- Prophet
+
+- **視覺化平台**
+- 儀表板建立
+- 自訂圖層呈現
+
+- **資料流程自動化**：各自獨立運行，且兼顧完整性與流程自動化之執行方式。
+
+- **使用者介面改善**：通過多人協作與回饋等方式，協助使用者介面改善。
+
+- **統計分析**
+
+須說明統計分析之數學模型，以及輸出入之資料格式。
+
+- **時間序列模型**
+
+須說明所採用之時間序列模型，包含數學基礎、演算法與回測之統計分析結果。
+
+測試有序巢狀清單
+
+1. **資料前處理**
+- 格式轉換
+- 欄位標準化
+- 雜訊清理
+
+1. **資料分析模組**
+- 統計分析
+- 時間序列模型
+    - ARIMA
+    - Prophet
+
+1. **視覺化平台**
+- 儀表板建立
+- 自訂圖層呈現
+
+1. **資料流程自動化**：各自獨立運行，且兼顧完整性與流程自動化之執行方式。
+
+1. **使用者介面改善**：通過多人協作與回饋等方式，協助使用者介面改善。
+
+1. **統計分析**
+
+須說明統計分析之數學模型，以及輸出入之資料格式。
+
+1. **時間序列模型**
+
+須說明所採用之時間序列模型，包含數學基礎、演算法與回測之統計分析結果。
+
+---
+
+## 四、成果內容
+
+### 4.1 表格測試
+
+| 項目 | 完成度 | 備註 |
+|------|--------|------|
+| 自動化流程 | 100% | 已完成 |
+| 系統效能優化 | 95% | 尚可持續改善 |
+| 介面改善 | 80% | 預計下期延伸 |
+
+---
+
+### 4.2 程式碼區塊（JavaScript）
+
+```js
+import dayjs from 'dayjs'
+
+function calcPerformance(a, b) {
+const diff = b - a
+return {
+start: a,
+end: b,
+improved: diff,
+time: dayjs().format('YYYY-MM-DD HH:mm:ss')
+}
+}
+
+console.log(calcPerformance(100, 260))
+```
+
+### 4.3 程式碼區塊（bash）
+
+```bash
+#!/bin/bash
+echo "Start processing..."
+python analyze.py --input=data.json --output=report.csv
+echo "Done."
+```
+
+---
+
+## 五、圖片、連結與註腳
+
+### 5.1 相關連結
+
+- 官方網站：https://example.com  
+- GitHub Repo: [點我連結](https://github.com/)  
+- 參考文獻：見文末註腳[^ref1]  
+
+### 5.2 圖片插入
+
+<div style="padding-bottom:12px; text-align:left;">
+    <img style="width:100%; max-width:400px;" src="https://cdn.jsdelivr.net/npm/w-demores@1.0.28/res/img/food/001.jpg" />
+</div>
+
+---
+
+## 六、結論與後續建議
+
+### 6.1 成果總結
+
+本計畫成功達成主要目標，並建立：
+
+- 模組化程式架構
+- 可擴充資料處理流程
+- 具彈性的視覺化平台
+
+### 6.2 後續建議
+
+1. 增加第三方 API 整合
+2. 加強 AI 模型訓練與部署
+3. 系統導入自動化測試（CI/CD）
+
+---
+
+## 七、附錄
+
+### 7.1 引用區塊層級
+
+> 第一層引用
+>> 第二層引用
+>>> 第三層引用
+
+---
+
+### 7.2 數學公式
+
+行內公式：$E = mc^2$
+
+區塊公式：
+
+$$
+y = ax^2 + bx + c
+$$
+
+---
+
+### 7.3 刪除隱藏元素
+
+<div style="margin:1rem 0;">
+<div style="margin:1rem 0;">顯示文字</div>
+<div style="margin:1rem 0; display:none;">不能顯示文字</div>
+</div>
+
+---
+
+### 7.4 特殊元素
+
+前段文字
+<docx_br>
+後段文字
+
+---
+
+## 註腳
+
+[^ref1]: 本註腳示範 Markdown footnote 語法。
+
+            </textarea>
+
+            <div style="padding-left:10px;"></div>
+        
+            <div id="plhtml" style="border:1px solid #666; padding:0px 24px; width:calc( 100svw - 552px ); height:calc( 96svh - 4px ); overflow-y:scroll;">
+                <div id="mdhtml"></div>  
+            </div>
+        
+        </div>
+        
+        <script>
+
+            function rdr(){
+                // console.log('rdr')
+
+                let ele = document.querySelector('#mdhtml')
+                // console.log('ele', ele)
+
+                let markdown = document.querySelector('#markdown').value
+                // console.log('markdown',markdown)
+
+                md2html(markdown,{mergeStyle:true})
+                    .then((res)=>{
+                        console.log(res)
+                        ele.innerHTML = res.html
+                    })
+                    .catch((err)=>{
+                        console.log(err)
+                    })
+
+            }
+            rdr()
+
+        </script>
+
+    </body>
+
+</html>

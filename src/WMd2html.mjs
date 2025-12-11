@@ -2,7 +2,6 @@ import path from 'path'
 import fs from 'fs'
 import get from 'lodash-es/get.js'
 import each from 'lodash-es/each.js'
-import map from 'lodash-es/map.js'
 import split from 'lodash-es/split.js'
 import trim from 'lodash-es/trim.js'
 import join from 'lodash-es/join.js'
@@ -10,24 +9,17 @@ import drop from 'lodash-es/drop.js'
 import size from 'lodash-es/size.js'
 import isbol from 'wsemi/src/isbol.mjs'
 import isestr from 'wsemi/src/isestr.mjs'
-import isearr from 'wsemi/src/isearr.mjs'
-import isnum from 'wsemi/src/isnum.mjs'
 import isfun from 'wsemi/src/isfun.mjs'
 import ispm from 'wsemi/src/ispm.mjs'
-import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
 import html2str from 'wsemi/src/html2str.mjs'
 import pmSeries from 'wsemi/src/pmSeries.mjs'
 import getFileTrueName from 'wsemi/src/getFileTrueName.mjs'
 import getPathParent from 'wsemi/src/getPathParent.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
-import wi from 'w-image-proc'
-import { Marked } from 'marked'
-import markedKatex from 'marked-katex-extension'
-import markedFootnote from 'marked-footnote'
-import hljs from 'highlight.js'
-import { markedHighlight } from 'marked-highlight'
+import wi from 'w-image-proc/src/WImageProc.mjs'
 // import htmlRemovePInLi from './htmlRemovePInLi.mjs'
+import md2html from './md2html.mjs'
 import htmlClean from './htmlClean.mjs'
 
 
@@ -37,8 +29,28 @@ import htmlClean from './htmlClean.mjs'
  * @param {String} fpIn 輸入來源Markdown檔位置字串
  * @param {String} fpOut 輸入轉出Html檔位置字串
  * @param {Object} [opt={}] 輸入設定物件，預設{}
- * @param {String} [opt.fpInTemp=] 輸入模板位置字串，預設'./node_modules/w-md2html/src/html.tmp'
+ * @param {String} [opt.tableBorderColor='#666'] 輸入表格邊框顏色 (CSS color)
+ * @param {string[]} [opt.fontFamilies=['Microsoft JhengHei','Avenir','Helvetica','Arial','sans-serif']] 輸入內文字型優先順序列表
+ * @param {String} [opt.fontSizeUnit='pt'] 輸入字型大小單位字串，可使用例如'pt'、'px'等，預設'pt'
+ * @param {Number} [opt.fontSizeScale=1] 輸入字型大小縮放倍率數字，預設1
+ * @param {Number|String} [opt.fontSizeDef] 輸入內文字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeH1] 輸入h1字型大小數字或字串，預設為20，自動轉字型為20*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeH2] 輸入h2字型大小數字或字串，預設為16，自動轉字型為16*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeH3] 輸入h3字型大小數字或字串，預設為14，自動轉字型為14*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeH4] 輸入h4字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeH5] 輸入h5字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeH6] 輸入h6字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeP] 輸入p字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeTab] 輸入表格文字字型大小數字或字串，預設為11，自動轉字型為11*fontSizeScale+fontSizeUnit
+ * @param {Number|String} [opt.fontSizeCode] 輸入程式碼區塊字型大小數字或字串，預設為10，自動轉字型為10*fontSizeScale+fontSizeUnit
+ * @param {String} [opt.textAlignH1='left'] 輸入h1對齊方式，可使用'left'、'center'、'right'，預設'left'
+ * @param {String} [opt.textAlignH2='left'] 輸入h2對齊方式，可使用'left'、'center'、'right'，預設'left'
+ * @param {String} [opt.textAlignH3='left'] 輸入h3對齊方式，可使用'left'、'center'、'right'，預設'left'
+ * @param {String} [opt.textAlignH4='left'] 輸入h4對齊方式，可使用'left'、'center'、'right'，預設'left'
+ * @param {String} [opt.textAlignH5='left'] 輸入h5對齊方式，可使用'left'、'center'、'right'，預設'left'
+ * @param {String} [opt.textAlignH6='left'] 輸入h6對齊方式，可使用'left'、'center'、'right'，預設'left'
  * @param {Number|String} [opt.imgWidthMax=null] 輸入圖片樣式給予最大寬度，可輸入數字500單位為px，或是字串例如'100%'，預設null
+ * @param {String} [opt.htmlTemp=null] 輸入模板字串，其內須取代{title}與{html}，預設null
  * @param {Boolean} [opt.imgConvertToBase64=true] 輸入圖片是否自動轉Base64布林值，預設true
  * @param {Function} [opt.funProcFpOut=null] 輸入處理輸出檔名函數，函數會傳入{fpOut,pretitle}，分別為原始輸出檔位置與提取Markdown內pretitle區文字，預設null
  * @returns {Promise} 回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息
@@ -88,37 +100,25 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     //fdIn
     let fdIn = getPathParent(fpIn)
 
-    //fpInTemp
-    let fpInTemp = get(opt, 'fpInTemp')
-    if (!fsIsFile(fpInTemp)) {
-
-        //fpInTempSelf
-        let fpInTempSelf = `./src/html.tmp`
-
-        //fpInTempPkg
-        let fpInTempPkg = `./node_modules/w-md2html/src/html.tmp`
-
-        if (fsIsFile(fpInTempSelf)) {
-            fpInTemp = fpInTempSelf
-        }
-        else if (fsIsFile(fpInTempPkg)) {
-            fpInTemp = fpInTempPkg
-        }
-        else {
-            throw new Error(`fpInTemp[${fpInTemp}] does not exist`)
-        }
-        // console.log('fpInTemp', fpInTemp)
-
-    }
-
-    //轉絕對路徑
-    fpInTemp = path.resolve(fpInTemp)
-    // console.log('fpInTemp', fpInTemp)
-
-    //imgWidthMax
-    let imgWidthMax = get(opt, 'imgWidthMax', null)
-    if (isnum(imgWidthMax)) {
-        imgWidthMax = `${imgWidthMax}px`
+    //htmlTemp
+    let htmlTemp = get(opt, 'htmlTemp', null)
+    if (!isestr(htmlTemp)) {
+        htmlTemp = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Cache-Control" content="no-siteapp"/>
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>{title}</title>
+</head>
+<body style="padding:20px; margin:0; overflow-y:auto;">
+    {html}
+</body>
+</html>
+`
     }
 
     //imgConvertToBase64
@@ -244,133 +244,130 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return tt
     }
 
-    //tableBorderColor
-    let tableBorderColor = get(opt, 'tableBorderColor', '')
-    if (!isestr(tableBorderColor)) {
-        tableBorderColor = '#666'
-    }
+    // //tableBorderColor
+    // let tableBorderColor = get(opt, 'tableBorderColor', '')
+    // if (!isestr(tableBorderColor)) {
+    //     tableBorderColor = '#666'
+    // }
 
-    //fontFamilies
-    let fontFamilies = get(opt, 'fontFamilies', [])
-    if (!isearr(fontFamilies)) {
-        fontFamilies = ['Microsoft JhengHei', 'Avenir', 'Helvetica', 'Arial', 'sans-serif']
-        // fontFamilies = ['Times New Roman', '標楷體'] //網頁使用, 因由左往右設定可不覆蓋無字元, 故可先設定Times New Roman再設定標楷體
-    }
-    fontFamilies = join(map(fontFamilies, (v) => {
-        return `'${v}'`
-    }), ', ')
+    // //fontFamilies
+    // let fontFamilies = get(opt, 'fontFamilies', [])
+    // if (!isearr(fontFamilies)) {
+    //     fontFamilies = ['Microsoft JhengHei', 'Avenir', 'Helvetica', 'Arial', 'sans-serif']
+    //     // fontFamilies = ['Times New Roman', '標楷體'] //網頁使用, 因由左往右設定可不覆蓋無字元, 故可先設定Times New Roman再設定標楷體
+    // }
+    // fontFamilies = join(map(fontFamilies, (v) => {
+    //     return `'${v}'`
+    // }), ', ')
 
-    //fontSizeUnit
-    let fontSizeUnit = get(opt, 'fontSizeUnit', '')
-    if (!isestr(fontSizeUnit)) {
-        fontSizeUnit = 'pt'
-    }
+    // //fontSizeUnit
+    // let fontSizeUnit = get(opt, 'fontSizeUnit', '')
+    // if (!isestr(fontSizeUnit)) {
+    //     fontSizeUnit = 'pt'
+    // }
 
-    //fontSizeScale
-    let fontSizeScale = get(opt, 'fontSizeScale', '')
-    if (!isnum(fontSizeScale)) {
-        fontSizeScale = 1
-    }
-    fontSizeScale = cdbl(fontSizeScale)
+    // //fontSizeScale
+    // let fontSizeScale = get(opt, 'fontSizeScale', '')
+    // if (!isnum(fontSizeScale)) {
+    //     fontSizeScale = 1
+    // }
+    // fontSizeScale = cdbl(fontSizeScale)
 
-    //fontSizeDef
-    let fontSizeDef = get(opt, 'fontSizeDef', '')
-    if (!isestr(fontSizeDef)) {
-        fontSizeDef = 12 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeDef
+    // let fontSizeDef = get(opt, 'fontSizeDef', '')
+    // if (!isestr(fontSizeDef)) {
+    //     fontSizeDef = 12 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeH1
-    let fontSizeH1 = get(opt, 'fontSizeH1', '')
-    if (!isestr(fontSizeH1)) {
-        fontSizeH1 = 20 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeH1
+    // let fontSizeH1 = get(opt, 'fontSizeH1', '')
+    // if (!isestr(fontSizeH1)) {
+    //     fontSizeH1 = 20 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeH2
-    let fontSizeH2 = get(opt, 'fontSizeH2', '')
-    if (!isestr(fontSizeH2)) {
-        fontSizeH2 = 16 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeH2
+    // let fontSizeH2 = get(opt, 'fontSizeH2', '')
+    // if (!isestr(fontSizeH2)) {
+    //     fontSizeH2 = 16 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeH3
-    let fontSizeH3 = get(opt, 'fontSizeH3', '')
-    if (!isestr(fontSizeH3)) {
-        fontSizeH3 = 14 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeH3
+    // let fontSizeH3 = get(opt, 'fontSizeH3', '')
+    // if (!isestr(fontSizeH3)) {
+    //     fontSizeH3 = 14 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeH4
-    let fontSizeH4 = get(opt, 'fontSizeH4', '')
-    if (!isestr(fontSizeH4)) {
-        fontSizeH4 = 12 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeH4
+    // let fontSizeH4 = get(opt, 'fontSizeH4', '')
+    // if (!isestr(fontSizeH4)) {
+    //     fontSizeH4 = 12 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeH5
-    let fontSizeH5 = get(opt, 'fontSizeH5', '')
-    if (!isestr(fontSizeH5)) {
-        fontSizeH5 = 12 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeH5
+    // let fontSizeH5 = get(opt, 'fontSizeH5', '')
+    // if (!isestr(fontSizeH5)) {
+    //     fontSizeH5 = 12 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeH6
-    let fontSizeH6 = get(opt, 'fontSizeH6', '')
-    if (!isestr(fontSizeH6)) {
-        fontSizeH6 = 12 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeH6
+    // let fontSizeH6 = get(opt, 'fontSizeH6', '')
+    // if (!isestr(fontSizeH6)) {
+    //     fontSizeH6 = 12 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeP
-    let fontSizeP = get(opt, 'fontSizeP', '')
-    if (!isestr(fontSizeP)) {
-        fontSizeP = 12 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeP
+    // let fontSizeP = get(opt, 'fontSizeP', '')
+    // if (!isestr(fontSizeP)) {
+    //     fontSizeP = 12 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeTab
-    let fontSizeTab = get(opt, 'fontSizeTab', '')
-    if (!isestr(fontSizeTab)) {
-        fontSizeTab = 11 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeTab
+    // let fontSizeTab = get(opt, 'fontSizeTab', '')
+    // if (!isestr(fontSizeTab)) {
+    //     fontSizeTab = 11 * fontSizeScale + fontSizeUnit
+    // }
 
-    //fontSizeCode
-    let fontSizeCode = get(opt, 'fontSizeCode', '')
-    if (!isestr(fontSizeCode)) {
-        fontSizeCode = 10 * fontSizeScale + fontSizeUnit
-    }
+    // //fontSizeCode
+    // let fontSizeCode = get(opt, 'fontSizeCode', '')
+    // if (!isestr(fontSizeCode)) {
+    //     fontSizeCode = 10 * fontSizeScale + fontSizeUnit
+    // }
 
-    //textAlignH1
-    let textAlignH1 = get(opt, 'textAlignH1', '')
-    if (!isestr(textAlignH1)) {
-        textAlignH1 = 'left'
-    }
+    // //textAlignH1
+    // let textAlignH1 = get(opt, 'textAlignH1', '')
+    // if (!isestr(textAlignH1)) {
+    //     textAlignH1 = 'left'
+    // }
 
-    //textAlignH2
-    let textAlignH2 = get(opt, 'textAlignH2', '')
-    if (!isestr(textAlignH2)) {
-        textAlignH2 = 'left'
-    }
+    // //textAlignH2
+    // let textAlignH2 = get(opt, 'textAlignH2', '')
+    // if (!isestr(textAlignH2)) {
+    //     textAlignH2 = 'left'
+    // }
 
-    //textAlignH3
-    let textAlignH3 = get(opt, 'textAlignH3', '')
-    if (!isestr(textAlignH3)) {
-        textAlignH3 = 'left'
-    }
+    // //textAlignH3
+    // let textAlignH3 = get(opt, 'textAlignH3', '')
+    // if (!isestr(textAlignH3)) {
+    //     textAlignH3 = 'left'
+    // }
 
-    //textAlignH4
-    let textAlignH4 = get(opt, 'textAlignH4', '')
-    if (!isestr(textAlignH4)) {
-        textAlignH4 = 'left'
-    }
+    // //textAlignH4
+    // let textAlignH4 = get(opt, 'textAlignH4', '')
+    // if (!isestr(textAlignH4)) {
+    //     textAlignH4 = 'left'
+    // }
 
-    //textAlignH5
-    let textAlignH5 = get(opt, 'textAlignH5', '')
-    if (!isestr(textAlignH5)) {
-        textAlignH5 = 'left'
-    }
+    // //textAlignH5
+    // let textAlignH5 = get(opt, 'textAlignH5', '')
+    // if (!isestr(textAlignH5)) {
+    //     textAlignH5 = 'left'
+    // }
 
-    //textAlignH6
-    let textAlignH6 = get(opt, 'textAlignH6', '')
-    if (!isestr(textAlignH6)) {
-        textAlignH6 = 'left'
-    }
-
-    //tmp
-    let tmp = fs.readFileSync(fpInTemp, 'utf8')
+    // //textAlignH6
+    // let textAlignH6 = get(opt, 'textAlignH6', '')
+    // if (!isestr(textAlignH6)) {
+    //     textAlignH6 = 'left'
+    // }
 
     //title
     let title = getFileTrueName(fpIn)
@@ -397,49 +394,6 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
     //cvPicB64
     md = await cvPicB64(fdInMd, md)
-
-    //marked
-    let marked = new Marked()
-
-    //擴充KaTeX
-    marked.use(markedKatex({
-        throwOnError: false, //不要遇錯就丟例外
-        nonStandard: true, //允許單行公式$...$可支援沒有空白格式
-    }))
-
-    //擴充註腳Footnote
-    marked.use(markedFootnote())
-
-    //擴充highlight
-    marked.use(markedHighlight({
-        langPrefix: 'hljs language-', //指定給code用的class為'hljs language-js'
-        emptyLangClass: 'hljs', //沒指定語言時的class
-        highlight(code, lang) {
-            let language = lang && hljs.getLanguage(lang) ? lang : 'plaintext'
-            return hljs.highlight(code, { language }).value
-        },
-    }))
-
-    //renderer
-    let renderer = {
-        image: ({ href, title, text }) => {
-            // console.log('href', href, 'title', title, 'text', text)
-
-            //attrTitle
-            let attrTitle = isestr(title) ? `title="${title}"` : ''
-
-            //st
-            let st = ''
-            if (isestr(imgWidthMax)) {
-                st = `max-width:${imgWidthMax}; height:auto;`
-            }
-
-            //h
-            let h = `<img src="${href}" alt="${text}" ${attrTitle} style="${st}">`
-
-            return h
-        },
-    }
 
     //walkTokens
     let walkTokens = async (token) => {
@@ -472,41 +426,45 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         }
     }
 
-    //其他擴充
-    marked.use({
-        async: true,
-        renderer, //無法使用async
-        walkTokens, //可用async, 圖片轉成base64時因svg轉換須async, 故只能通過walkTokens攔截進行轉換
+    //md2html
+    let rh = await md2html(md, {
+        ...opt,
+        funWalkTokens: walkTokens,
+        mergeStyle: true,
     })
 
     //mdh
-    let mdh = await marked.parse(md)
-    // console.log('h', h)
+    let mdh = get(rh, 'html', '')
 
-    //tmp
-    let h = tmp
+    // //check, 可能傳入markdown為空字串, 不能檢測報錯
+    // if (!isestr(mdh)) {
+    //     throw new Error(`can not convert markdown`)
+    // }
+
+    //h
+    let h = htmlTemp
 
     //replace, 模板符號
     h = replace(h, '{html}', mdh)
     h = replace(h, '{title}', title)
-    h = replace(h, '{fontFamilies}', fontFamilies)
-    h = replace(h, '{fontSizeDef}', fontSizeDef)
-    h = replace(h, '{fontSizeH1}', fontSizeH1)
-    h = replace(h, '{fontSizeH2}', fontSizeH2)
-    h = replace(h, '{fontSizeH3}', fontSizeH3)
-    h = replace(h, '{fontSizeH4}', fontSizeH4)
-    h = replace(h, '{fontSizeH5}', fontSizeH5)
-    h = replace(h, '{fontSizeH6}', fontSizeH6)
-    h = replace(h, '{fontSizeP}', fontSizeP)
-    h = replace(h, '{fontSizeTab}', fontSizeTab)
-    h = replace(h, '{fontSizeCode}', fontSizeCode)
-    h = replace(h, '{textAlignH1}', textAlignH1)
-    h = replace(h, '{textAlignH2}', textAlignH2)
-    h = replace(h, '{textAlignH3}', textAlignH3)
-    h = replace(h, '{textAlignH4}', textAlignH4)
-    h = replace(h, '{textAlignH5}', textAlignH5)
-    h = replace(h, '{textAlignH6}', textAlignH6)
-    h = replace(h, '{tableBorderColor}', tableBorderColor)
+    // h = replace(h, '{fontFamilies}', fontFamilies)
+    // h = replace(h, '{fontSizeDef}', fontSizeDef)
+    // h = replace(h, '{fontSizeH1}', fontSizeH1)
+    // h = replace(h, '{fontSizeH2}', fontSizeH2)
+    // h = replace(h, '{fontSizeH3}', fontSizeH3)
+    // h = replace(h, '{fontSizeH4}', fontSizeH4)
+    // h = replace(h, '{fontSizeH5}', fontSizeH5)
+    // h = replace(h, '{fontSizeH6}', fontSizeH6)
+    // h = replace(h, '{fontSizeP}', fontSizeP)
+    // h = replace(h, '{fontSizeTab}', fontSizeTab)
+    // h = replace(h, '{fontSizeCode}', fontSizeCode)
+    // h = replace(h, '{textAlignH1}', textAlignH1)
+    // h = replace(h, '{textAlignH2}', textAlignH2)
+    // h = replace(h, '{textAlignH3}', textAlignH3)
+    // h = replace(h, '{textAlignH4}', textAlignH4)
+    // h = replace(h, '{textAlignH5}', textAlignH5)
+    // h = replace(h, '{textAlignH6}', textAlignH6)
+    // h = replace(h, '{tableBorderColor}', tableBorderColor)
     // console.log('h', h)
 
     //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於htmlClean被清除

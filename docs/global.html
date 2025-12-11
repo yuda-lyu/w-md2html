@@ -29,7 +29,7 @@
 <nav >
     
     
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#WMd2html">WMd2html</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#WMd2html">WMd2html</a></li><li><a href="global.html#md2html">md2html</a></li></ul>
     
 </nav>
 
@@ -146,7 +146,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="WMd2html.mjs.html">WMd2html.mjs</a>, <a href="WMd2html.mjs.html#line77">line 77</a>
+        <a href="WMd2html.mjs.html">WMd2html.mjs</a>, <a href="WMd2html.mjs.html#line89">line 89</a>
     </li></ul></dd>
     
 
@@ -362,7 +362,7 @@
 
         <tr>
             
-                <td class="name"><code>fpInTemp=</code></td>
+                <td class="name"><code>tableBorderColor</code></td>
             
 
             <td class="type">
@@ -390,10 +390,782 @@
             
                 <td class="default">
                 
+                    <code>'#666'</code>
+                
                 </td>
             
 
-            <td class="description last"><p>輸入模板位置字串，預設'./node_modules/w-md2html/src/html.tmp'</p></td>
+            <td class="description last"><p>輸入表格邊框顏色 (CSS color)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontFamilies</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;string></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>['Microsoft JhengHei','Avenir','Helvetica','Arial','sans-serif']</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入內文字型優先順序列表</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeUnit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'pt'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入字型大小單位字串，可使用例如'pt'、'px'等，預設'pt'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeScale</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>1</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入字型大小縮放倍率數字，預設1</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeDef</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入內文字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH1</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h1字型大小數字或字串，預設為20，自動轉字型為20*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH2</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h2字型大小數字或字串，預設為16，自動轉字型為16*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH3</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h3字型大小數字或字串，預設為14，自動轉字型為14*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH4</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h4字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH5</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h5字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH6</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h6字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeP</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入p字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeTab</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入表格文字字型大小數字或字串，預設為11，自動轉字型為11*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeCode</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入程式碼區塊字型大小數字或字串，預設為10，自動轉字型為10*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH1</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h1對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH2</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h2對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH3</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h3對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH4</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h4對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH5</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h5對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH6</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h6對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
         </tr>
 
     
@@ -437,6 +1209,46 @@
             
 
             <td class="description last"><p>輸入圖片樣式給予最大寬度，可輸入數字500單位為px，或是字串例如'100%'，預設null</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>htmlTemp</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>null</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入模板字串，其內須取代{title}與{html}，預設null</p></td>
         </tr>
 
     
@@ -572,6 +1384,1188 @@
 
 
         
+            
+
+    
+
+    <h4 class="name" id="md2html"><span class="type-signature type-signature-async">(async) </span>md2html<span class="signature">(md, opt<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Markdown轉Html</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="md2html.mjs.html">md2html.mjs</a>, <a href="md2html.mjs.html#line61">line 61</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-examples">Example</h5>
+    
+    <pre class="prettyprint"><code>let markdown = `...`md2html(markdown,{mergeStyle:true})    .then((res)=>{        console.log(res)        ele.innerHTML = res.html    })    .catch((err)=>{        console.log(err)    })</code></pre>
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>md</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入Markdown字串</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>opt</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>{}</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入設定物件，預設{}</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>tableBorderColor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'#666'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入表格邊框顏色 (CSS color)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontFamilies</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;string></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>['Microsoft JhengHei','Avenir','Helvetica','Arial','sans-serif']</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入內文字型優先順序列表</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeUnit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'pt'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入字型大小單位字串，可使用例如'pt'、'px'等，預設'pt'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeScale</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>1</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入字型大小縮放倍率數字，預設1</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeDef</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入內文字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH1</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h1字型大小數字或字串，預設為20，自動轉字型為20*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH2</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h2字型大小數字或字串，預設為16，自動轉字型為16*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH3</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h3字型大小數字或字串，預設為14，自動轉字型為14*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH4</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h4字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH5</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h5字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeH6</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h6字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeP</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入p字型大小數字或字串，預設為12，自動轉字型為12*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeTab</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入表格文字字型大小數字或字串，預設為11，自動轉字型為11*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fontSizeCode</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入程式碼區塊字型大小數字或字串，預設為10，自動轉字型為10*fontSizeScale+fontSizeUnit</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH1</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h1對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH2</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h2對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH3</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h3對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH4</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h4對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH5</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h5對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>textAlignH6</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>'left'</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入h6對齊方式，可使用'left'、'center'、'right'，預設'left'</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>imgWidthMax</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>null</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入圖片樣式給予最大寬度，可輸入數字500單位為px，或是字串例如'100%'，預設null</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>funWalkTokens</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>null</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入marked轉換時的walkTokens函數，可執行進階處理，預設null</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mergeStyle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>false</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>輸入是否將style放入html內布林值，預設false</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>回傳Promise，resolve回傳轉換後物件，包含html、styleSrcs、styleDef，reject回傳錯誤訊息</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
     
 
     
@@ -591,7 +2585,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Mon Nov 24 2025 19:17:50 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Thu Dec 11 2025 11:35:42 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>
