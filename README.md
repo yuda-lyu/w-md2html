@@ -11,6 +11,10 @@ A tool for Markdown to Html.
 ## Documentation
 To view documentation or get support, visit [docs](https://yuda-lyu.github.io/w-md2html/global.html).
 
+## Example
+To view some examples for more understanding, visit examples:
+> **convertCoordinate:** [ex-md2html.html](https://yuda-lyu.github.io/w-md2html/examples/ex-md2html.html) [[source code](https://github.com/yuda-lyu/w-md2html/blob/master/docs/examples/ex-md2html.html)]
+
 ## Installation
 
 ### Using npm(ES6 module):
