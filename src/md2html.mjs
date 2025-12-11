@@ -7,6 +7,7 @@ import isnum from 'wsemi/src/isnum.mjs'
 import isbol from 'wsemi/src/isbol.mjs'
 import isearr from 'wsemi/src/isearr.mjs'
 import isfun from 'wsemi/src/isfun.mjs'
+import isWindow from 'wsemi/src/isWindow.mjs'
 import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
 import { Marked } from 'marked'
@@ -14,6 +15,7 @@ import markedKatex from 'marked-katex-extension'
 import markedFootnote from 'marked-footnote'
 import hljs from 'highlight.js'
 import { markedHighlight } from 'marked-highlight'
+import DOMPurify from 'dompurify'
 
 
 /**
@@ -485,6 +487,21 @@ async function md2html(md, opt = {}) {
             styleDef,
         }
     }
+
+    //dp
+    let dp = null
+    if (isWindow()) {
+        dp = DOMPurify
+    }
+    else {
+        let clib = 'jsdom'
+        let { JSDOM } = await import(clib)
+        let { window } = new JSDOM('')
+        dp = DOMPurify(window)
+    }
+
+    //sanitize
+    r.html = dp.sanitize(r.html)
 
     return r
 }

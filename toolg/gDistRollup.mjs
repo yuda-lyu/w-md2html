@@ -25,6 +25,7 @@ async function rp() {
             'marked-footnote': 'marked-footnote',
             'marked-highlight': 'marked-highlight',
             'cheerio': 'cheerio',
+            'jsdom': 'jsdom',
         },
         external: [
             'path',
@@ -36,6 +37,7 @@ async function rp() {
             'marked-footnote',
             'marked-highlight',
             'cheerio',
+            'jsdom',
         ],
     })
 
@@ -46,18 +48,10 @@ async function rp() {
         hookNameDist: () => 'md2html',
         // nameDistType: 'kebabCase', //直接由hookNameDist給予
         globals: {
-            // 'highlight.js': 'highlight.js',
-            // 'marked': 'marked',
-            // 'marked-katex-extension': 'marked-katex-extension',
-            // 'marked-footnote': 'marked-footnote',
-            // 'marked-highlight': 'marked-highlight',
+            'jsdom': 'jsdom',
         },
         external: [
-            // 'highlight.js',
-            // 'marked',
-            // 'marked-katex-extension',
-            // 'marked-footnote',
-            // 'marked-highlight',
+            'jsdom',
         ],
     })
 
