@@ -137,13 +137,13 @@
 import dayjs from 'dayjs'
 
 function calcPerformance(a, b) {
-const diff = b - a
-return {
-start: a,
-end: b,
-improved: diff,
-time: dayjs().format('YYYY-MM-DD HH:mm:ss')
-}
+  const diff = b - a
+  return {
+    start: a,
+    end: b,
+    improved: diff,
+    time: dayjs().format('YYYY-MM-DD HH:mm:ss')
+  }
 }
 
 console.log(calcPerformance(100, 260))

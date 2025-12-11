@@ -8,7 +8,175 @@
 </head>
 <body style="padding:20px; margin:0; overflow-y:auto;">
     
-<div class="md" style="contain:layout;">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<style>
+
+.md {
+    font-family: 'Microsoft JhengHei', 'Avenir', 'Helvetica', 'Arial', 'sans-serif';
+    font-size: 12pt;
+}
+
+.md table {
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+    word-break: initial;
+    font-family: 'Microsoft JhengHei', 'Avenir', 'Helvetica', 'Arial', 'sans-serif';
+    font-size: 11pt;
+}
+
+.md tr {
+    margin: 0;
+    padding: 0;
+}
+
+.md table tr th {
+    font-weight: bold;
+    background: #eee;
+    border: 1px solid #666;
+    border-bottom: 0;
+    margin: 0;
+    padding: 6px 13px;
+}
+
+.md table tr td {
+    border: 1px solid #666;
+    margin: 0;
+    padding: 6px 13px;
+}
+
+.md h1 {
+    display: block;
+    font-size: 20pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h2 {
+    display: block;
+    font-size: 16pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h3 {
+    display: block;
+    font-size: 14pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h4 {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h5 {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md h6 {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+    font-weight: bold;
+    text-align: left;
+}
+
+.md p {
+    display: block;
+    font-size: 12pt;
+    margin: 1rem 0;
+    padding: 0;
+} 
+
+.md ol {
+    display: block;
+    list-style-type: decimal;
+    margin: 1rem 0;
+    padding: 0;
+    padding-inline-start: 40px;
+} 
+
+.md li {
+    display: list-item;
+    /* margin: 0.4rem 0; */ /* 須個別元素用style給予才能用於docx */
+    padding: 0;
+}
+
+.md blockquote {
+    font-style: italic;
+    border-left: 5px solid #debc76;
+    background: #f9f2e3;
+    margin: 1rem 0;
+    padding: 0.1rem 1.0rem 0.1rem 1.0rem;
+}
+
+.md pre {
+    display: block;
+    font-size: 10pt;
+    overflow: auto;
+    background: #eee;
+    margin: 1rem 0;
+    padding: 0;
+}
+.md pre code.hljs {
+    background: transparent !important;
+    line-height: 1.6 !important;
+}
+
+.md code {
+    font-family: Consolas, "Courier New", monospace;
+}
+
+.md a {
+    color: #0066cc;
+    cursor: pointer;
+}
+
+.md a[data-footnote-ref]::before {
+    content: "[";
+}
+.md a[data-footnote-ref]::after {
+    content: "]";
+}
+.md sup:has(a[data-footnote-ref]) {
+    position: relative;
+    vertical-align: baseline; /* 不要推高行距 */
+    top: -0.5em;              /* 往上移動看起來像上標 */
+    line-height: 0;           /* 避免影響行距 */
+}
+
+.md hr {
+    margin: 2rem 0;
+    padding: 0;
+}
+
+.md section {
+    margin: 0;
+    padding: 0;
+}
+
+    </style>
+
+        <div class="md" style="contain:layout;">
             <div style="font-size:14pt; text-align:center;">
     測試範例
 </div>

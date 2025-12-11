@@ -464,6 +464,21 @@ async function md2html(md, opt = {}) {
     styleDef = replace(styleDef, '{textAlignH6}', textAlignH6)
     styleDef = replace(styleDef, '{tableBorderColor}', tableBorderColor)
 
+    //dp
+    let dp = null
+    if (isWindow()) {
+        dp = DOMPurify
+    }
+    else {
+        let clib = 'jsdom'
+        let { JSDOM } = await import(clib)
+        let { window } = new JSDOM('')
+        dp = DOMPurify(window)
+    }
+
+    //sanitize
+    h = dp.sanitize(h)
+
     //r
     let r = {}
     if (mergeStyle) {
@@ -487,21 +502,6 @@ async function md2html(md, opt = {}) {
             styleDef,
         }
     }
-
-    //dp
-    let dp = null
-    if (isWindow()) {
-        dp = DOMPurify
-    }
-    else {
-        let clib = 'jsdom'
-        let { JSDOM } = await import(clib)
-        let { window } = new JSDOM('')
-        dp = DOMPurify(window)
-    }
-
-    //sanitize
-    r.html = dp.sanitize(r.html)
 
     return r
 }

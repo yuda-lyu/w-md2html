@@ -10,7 +10,7 @@
         
         <script src="https://cdn.jsdelivr.net/npm/wsemi/dist/wsemi.umd.js"></script>
     
-        <script src="https://cdn.jsdelivr.net/npm/w-md2html@1.0.26/dist/md2html.umd.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/w-md2html@1.0.27/dist/md2html.umd.js"></script>
 
     </head>
 
@@ -137,13 +137,13 @@
 import dayjs from 'dayjs'
 
 function calcPerformance(a, b) {
-const diff = b - a
-return {
-start: a,
-end: b,
-improved: diff,
-time: dayjs().format('YYYY-MM-DD HH:mm:ss')
-}
+  const diff = b - a
+  return {
+    start: a,
+    end: b,
+    improved: diff,
+    time: dayjs().format('YYYY-MM-DD HH:mm:ss')
+  }
 }
 
 console.log(calcPerformance(100, 260))
