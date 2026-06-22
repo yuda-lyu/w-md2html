@@ -20,7 +20,7 @@ import fsIsFile from 'wsemi/src/fsIsFile.mjs'
 import wi from 'w-image-proc/src/WImageProc.mjs'
 // import htmlRemovePInLi from './htmlRemovePInLi.mjs'
 import md2html from './md2html.mjs'
-import htmlClean from './htmlClean.mjs'
+import htmlConvert from './htmlConvert.mjs'
 
 
 /**
@@ -467,7 +467,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     // h = replace(h, '{tableBorderColor}', tableBorderColor)
     // console.log('h', h)
 
-    //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於htmlClean被清除
+    //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於htmlConvert被清除
     if (true) {
         h = replace(h, '<h2 id="footnote-label" class="sr-only">Footnotes</h2>', '<h2 id="footnote-label" class="sr-only" style="height:0px; line-height:0px; min-height:0px; overflow:hidden;">Footnotes</h2>')
     }
@@ -477,20 +477,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         h = h.replaceAll(`<li>`, `<li style="margin:7px 0;">`)
     }
 
-    //特殊標記<docx_br>, 於html內不顯示, 於docx內為換行符號, 提供docx撐開列距之用
-    if (true) {
-        h = h.replaceAll(`<docx_br>`, `
-<div style="height:0; overflow:hidden;">
-    <br>
-</div>    
-        `)
-    }
-
     // //htmlRemovePInLi
     // h = htmlRemovePInLi(h)
 
-    //htmlClean
-    h = htmlClean(h)
+    //htmlConvert
+    h = htmlConvert(h)
 
     //funProcFpOut
     if (isfun(funProcFpOut)) {
