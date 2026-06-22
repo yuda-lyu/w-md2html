@@ -143,12 +143,12 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return pretitle
     }
 
-    let cvItemNum = (md, type) => {
+    let cvItemNum = async(md, type) => {
         let s = split(md, '\n') //不能用sep避免md內手動分行消失
         let i = 0
         let rs = []
         let kp = {}
-        each(s, (v) => {
+        await pmSeries(s, async (v) => {
             let vv = v
             if (v.indexOf(`${type}n`) >= 0) {
                 i++
@@ -161,7 +161,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
 
                 //儲存圖表名對應之圖表編號
                 let t = v
-                t = html2str(t)
+                t = await html2str(t)
                 t = replace(t, `${type}n`, '')
                 t = trim(t)
                 t = `{${t}}`
@@ -385,11 +385,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     // console.log(fpIn, 'pretitle', pretitle)
 
     //cvItemNum 圖
-    md = cvItemNum(md, '圖')
+    md = await cvItemNum(md, '圖')
     // console.log(md)
 
     //cvItemNum 表
-    md = cvItemNum(md, '表')
+    md = await cvItemNum(md, '表')
     // console.log(md)
 
     //cvPicB64
