@@ -29,6 +29,8 @@ import htmlConvert from './htmlConvert.mjs'
  * @param {String} fpIn 輸入來源Markdown檔位置字串
  * @param {String} fpOut 輸入轉出Html檔位置字串
  * @param {Object} [opt={}] 輸入設定物件，預設{}
+ * @param {Boolean} [opt.linkBlank=true] 輸入連結是否為另開新頁布林值，預設true
+ * @param {Boolean} [opt.tableHorizontalAlignmentCenter=true] 輸入表格是否水平置中布林值，預設true
  * @param {String} [opt.tableBorderColor='#666'] 輸入表格邊框顏色 (CSS color)
  * @param {string[]} [opt.fontFamilies=['Microsoft JhengHei','Avenir','Helvetica','Arial','sans-serif']] 輸入內文字型優先順序列表
  * @param {String} [opt.fontSizeUnit='pt'] 輸入字型大小單位字串，可使用例如'pt'、'px'等，預設'pt'
@@ -87,6 +89,18 @@ import htmlConvert from './htmlConvert.mjs'
  *
  */
 async function WMd2html(fpIn, fpOut, opt = {}) {
+
+    //linkBlank
+    let linkBlank = get(opt, 'linkBlank', null)
+    if (!isbol(linkBlank)) {
+        linkBlank = true
+    }
+
+    //tableHorizontalAlignmentCenter
+    let tableHorizontalAlignmentCenter = get(opt, 'tableHorizontalAlignmentCenter', null)
+    if (!isbol(tableHorizontalAlignmentCenter)) {
+        tableHorizontalAlignmentCenter = true
+    }
 
     //check
     if (!fsIsFile(fpIn)) {
@@ -481,7 +495,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     // h = htmlRemovePInLi(h)
 
     //htmlConvert
-    h = htmlConvert(h)
+    h = htmlConvert(h, { linkBlank, tableHorizontalAlignmentCenter })
 
     //funProcFpOut
     if (isfun(funProcFpOut)) {
