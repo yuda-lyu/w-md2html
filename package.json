@@ -1,6 +1,6 @@
 {
   "name": "w-md2html",
-  "version": "1.0.32",
+  "version": "1.0.33",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "cheerio": "^1.2.0",

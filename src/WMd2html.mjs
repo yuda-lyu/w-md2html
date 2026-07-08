@@ -443,6 +443,8 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     //md2html
     let rh = await md2html(md, {
         ...opt,
+        linkBlank: false, //由htmlConvert處理
+        tableHorizontalAlignmentCenter: false, //由htmlConvert處理
         funWalkTokens: walkTokens,
         mergeStyle: true,
     })

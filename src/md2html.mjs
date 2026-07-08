@@ -23,6 +23,8 @@ import DOMPurify from 'dompurify'
  *
  * @param {String} md 輸入Markdown字串
  * @param {Object} [opt={}] 輸入設定物件，預設{}
+ * @param {Boolean} [opt.linkBlank=false] 輸入連結是否為另開新頁布林值，預設false
+ * @param {Boolean} [opt.tableHorizontalAlignmentCenter=false] 輸入表格是否水平置中布林值，預設false
  * @param {String} [opt.tableBorderColor='#666'] 輸入表格邊框顏色 (CSS color)
  * @param {string[]} [opt.fontFamilies=['Microsoft JhengHei','Avenir','Helvetica','Arial','sans-serif']] 輸入內文字型優先順序列表
  * @param {String} [opt.fontSizeUnit='pt'] 輸入字型大小單位字串，可使用例如'pt'、'px'等，預設'pt'
@@ -61,6 +63,18 @@ import DOMPurify from 'dompurify'
  *
  */
 async function md2html(md, opt = {}) {
+
+    //linkBlank
+    let linkBlank = get(opt, 'linkBlank', null)
+    if (!isbol(linkBlank)) {
+        linkBlank = false
+    }
+
+    //tableHorizontalAlignmentCenter
+    let tableHorizontalAlignmentCenter = get(opt, 'tableHorizontalAlignmentCenter', null)
+    if (!isbol(tableHorizontalAlignmentCenter)) {
+        tableHorizontalAlignmentCenter = false
+    }
 
     //tableBorderColor
     let tableBorderColor = get(opt, 'tableBorderColor', '')
@@ -464,20 +478,54 @@ async function md2html(md, opt = {}) {
     styleDef = replace(styleDef, '{textAlignH6}', textAlignH6)
     styleDef = replace(styleDef, '{tableBorderColor}', tableBorderColor)
 
-    //dp
+    //dp, doc
     let dp = null
+    let doc = null
     if (isWindow()) {
         dp = DOMPurify
+        doc = document
     }
     else {
         let clib = 'jsdom'
         let { JSDOM } = await import(clib)
         let { window } = new JSDOM('')
         dp = DOMPurify(window)
+        doc = window.document
     }
 
     //sanitize
     h = dp.sanitize(h)
+
+    //linkBlank / tableHorizontalAlignmentCenter: 於sanitize之後以DOM補處理
+    //  why: DOMPurify預設會洗掉<a target>, 故不可只靠marked renderer, 必須於sanitize之後補; 用已建立之DOM(瀏覽器document / Node端jsdom)避免引入cheerio與addHook全域污染
+    if (linkBlank || tableHorizontalAlignmentCenter) {
+        let box = doc.createElement('div')
+        box.innerHTML = h
+
+        //linkBlank: 外部連結另開新頁, 排除同頁錨點(footnote之#fnX)避免註腳連結誤開新分頁
+        if (linkBlank) {
+            each(box.querySelectorAll('a[href]'), (el) => {
+                let href = el.getAttribute('href') || ''
+                if (href.slice(0, 1) !== '#') {
+                    el.setAttribute('target', '_blank')
+                    el.setAttribute('rel', 'noopener noreferrer')
+                }
+            })
+        }
+
+        //tableHorizontalAlignmentCenter: table設inline-table並外包text-align:center之div, 使html/docx皆可水平置中(block table用margin:auto無法帶入docx)
+        if (tableHorizontalAlignmentCenter) {
+            each(box.querySelectorAll('table'), (el) => {
+                el.style.display = 'inline-table' //table變inline-level才吃父層text-align置中(內層仍維持表格排版), 用inline-table而非inline-block以保留border-collapse與欄寬
+                let wrap = doc.createElement('div')
+                wrap.style.textAlign = 'center'
+                el.parentNode.insertBefore(wrap, el)
+                wrap.appendChild(el)
+            })
+        }
+
+        h = box.innerHTML
+    }
 
     //r
     let r = {}
