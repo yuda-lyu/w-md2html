@@ -496,36 +496,86 @@ async function md2html(md, opt = {}) {
     //sanitize
     h = dp.sanitize(h)
 
-    //linkBlank / tableHorizontalAlignmentCenter: 於sanitize之後以DOM補處理
-    //  why: DOMPurify預設會洗掉<a target>, 故不可只靠marked renderer, 必須於sanitize之後補; 用已建立之DOM(瀏覽器document / Node端jsdom)避免引入cheerio與addHook全域污染
-    if (linkBlank || tableHorizontalAlignmentCenter) {
-        let box = doc.createElement('div')
-        box.innerHTML = h
+    //DOM後處理: 於sanitize之後以DOM補處理(原htmlConvert之處理併入此處, 消除重複解析)
+    //  why DOM: DOMPurify預設會洗掉<a target>, 不可只靠marked renderer; 用已建立之DOM(瀏覽器document / Node端jsdom)避免引入cheerio與addHook全域污染
+    //  display:none / data-for="br" / data-for="tab" 為無條件處理; linkBlank / tableHorizontalAlignmentCenter 依opt有條件處理
+    let zwsp = String.fromCharCode(0x200B) //零寬空格U+200B, 以ASCII碼點建構避免原始碼出現隱形字元
+    let box = doc.createElement('div')
+    box.innerHTML = h
 
-        //linkBlank: 外部連結另開新頁, 排除同頁錨點(footnote之#fnX)避免註腳連結誤開新分頁
-        if (linkBlank) {
-            each(box.querySelectorAll('a[href]'), (el) => {
-                let href = el.getAttribute('href') || ''
-                if (href.slice(0, 1) !== '#') {
-                    el.setAttribute('target', '_blank')
-                    el.setAttribute('rel', 'noopener noreferrer')
+    //移除display:none元素
+    each(box.querySelectorAll('[style*="display:none"]'), (el) => {
+        el.remove()
+    })
+
+    //data-for="br": 空div之「換行/空段落」語意標記, 於div內插入零寬空格(U+200B)佔位,
+    //使轉docx時段落不被Word匯入丟棄(由w-html2docx端還原移除); 僅對內容為空者處理避免覆蓋既有內容
+    //  why data-for(非for): DOMPurify 3.4.12起將for視為label限定屬性, 於div會被洗掉; data-*屬性預設保留故改用data-for承載標記
+    each(box.querySelectorAll('div[data-for="br"]'), (el) => {
+        if (el.textContent === '') {
+            el.textContent = zwsp
+        }
+    })
+
+    //data-for="tab": 表格字型大小標記, 空div之data-style-th/data-style-td分別為th/td之style, 套用至往下第一張table之th/td再移除此標記
+    //  why data-*: 標記(data-for)與樣式(data-style-th/td)皆用data-*承載, DOMPurify預設保留; 空div於md預覽不顯示且處理後移除, 與data-for="br"同慣例
+    //  why inline於th/td元素: 對應w-html2docx(Word匯入)實測生效寫法, 直接置於th/td元素上(非cell內span)可避免殘留多餘run
+    //  須先於tableHorizontalAlignmentCenter外包置中之前執行, 否則table被包入div後不再為此標記div之兄弟節點抓不到
+    each(box.querySelectorAll('div[data-for="tab"]'), (el) => {
+        let styleTh = el.getAttribute('data-style-th') || ''
+        let styleTd = el.getAttribute('data-style-td') || ''
+        let tab = el.nextElementSibling
+        while (tab && tab.tagName !== 'TABLE') {
+            tab = tab.nextElementSibling
+        }
+        if (tab) {
+            let addStyle = (cell, add) => {
+                if (add === '') {
+                    return
                 }
-            })
+                let prev = cell.getAttribute('style') || ''
+                if (prev !== '' && !/;\s*$/.test(prev)) {
+                    prev += ';'
+                }
+                cell.setAttribute('style', prev + add)
+            }
+            if (styleTh !== '') {
+                each(tab.querySelectorAll('th'), (th) => {
+                    addStyle(th, styleTh)
+                })
+            }
+            if (styleTd !== '') {
+                each(tab.querySelectorAll('td'), (td) => {
+                    addStyle(td, styleTd)
+                })
+            }
         }
+        el.remove()
+    })
 
-        //tableHorizontalAlignmentCenter: table設inline-table並外包text-align:center之div, 使html/docx皆可水平置中(block table用margin:auto無法帶入docx)
-        if (tableHorizontalAlignmentCenter) {
-            each(box.querySelectorAll('table'), (el) => {
-                el.style.display = 'inline-table' //table變inline-level才吃父層text-align置中(內層仍維持表格排版), 用inline-table而非inline-block以保留border-collapse與欄寬
-                let wrap = doc.createElement('div')
-                wrap.style.textAlign = 'center'
-                el.parentNode.insertBefore(wrap, el)
-                wrap.appendChild(el)
-            })
-        }
-
-        h = box.innerHTML
+    //linkBlank: 外部連結另開新頁, 排除同頁錨點(footnote之#fnX)避免註腳連結誤開新分頁
+    if (linkBlank) {
+        each(box.querySelectorAll('a[href]'), (el) => {
+            let href = el.getAttribute('href') || ''
+            if (href.slice(0, 1) !== '#') {
+                el.setAttribute('target', '_blank')
+                el.setAttribute('rel', 'noopener noreferrer')
+            }
+        })
     }
+
+    //tableHorizontalAlignmentCenter: table設inline-table並外包text-align:center之div, 使html/docx皆可水平置中(block table用margin:auto無法帶入docx)
+    if (tableHorizontalAlignmentCenter) {
+        each(box.querySelectorAll('table'), (el) => {
+            el.style.display = 'inline-table' //table變inline-level才吃父層text-align置中(內層仍維持表格排版), 用inline-table而非inline-block以保留border-collapse與欄寬
+            let wrap = doc.createElement('div')
+            wrap.style.textAlign = 'center'
+            el.parentNode.insertBefore(wrap, el)
+            wrap.appendChild(el)
+        })
+    }
+
+    h = box.innerHTML
 
     //r
     let r = {}

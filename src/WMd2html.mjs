@@ -18,9 +18,7 @@ import getFileTrueName from 'wsemi/src/getFileTrueName.mjs'
 import getPathParent from 'wsemi/src/getPathParent.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
 import wi from 'w-image-proc/src/WImageProc.mjs'
-// import htmlRemovePInLi from './htmlRemovePInLi.mjs'
 import md2html from './md2html.mjs'
-import htmlConvert from './htmlConvert.mjs'
 
 
 /**
@@ -440,11 +438,11 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         }
     }
 
-    //md2html
+    //md2html (linkBlank/tableHorizontalAlignmentCenter及for=br/for=tab/display:none等DOM後處理皆於md2html內執行)
     let rh = await md2html(md, {
         ...opt,
-        linkBlank: false, //由htmlConvert處理
-        tableHorizontalAlignmentCenter: false, //由htmlConvert處理
+        linkBlank,
+        tableHorizontalAlignmentCenter,
         funWalkTokens: walkTokens,
         mergeStyle: true,
     })
@@ -483,7 +481,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     // h = replace(h, '{tableBorderColor}', tableBorderColor)
     // console.log('h', h)
 
-    //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於htmlConvert被清除
+    //隱藏markedFootnote會自動添加的h2且無法更換Footnotes, 故於style設定強制隱藏, 避免轉docx時仍會出現, 注意不能刪除否則語音閱讀器查不到關聯, 也不能用display:none會於md2html被清除
     if (true) {
         h = replace(h, '<h2 id="footnote-label" class="sr-only">Footnotes</h2>', '<h2 id="footnote-label" class="sr-only" style="height:0px; line-height:0px; min-height:0px; overflow:hidden;">Footnotes</h2>')
     }
@@ -492,12 +490,6 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     if (true) {
         h = h.replaceAll(`<li>`, `<li style="margin:7px 0;">`)
     }
-
-    // //htmlRemovePInLi
-    // h = htmlRemovePInLi(h)
-
-    //htmlConvert
-    h = htmlConvert(h, { linkBlank, tableHorizontalAlignmentCenter })
 
     //funProcFpOut
     if (isfun(funProcFpOut)) {

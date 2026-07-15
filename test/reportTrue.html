@@ -1,9 +1,12 @@
-<!DOCTYPE html><html><head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta http-equiv="Cache-Control" content="no-siteapp">
-    <meta name="renderer" content="webkit">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Cache-Control" content="no-siteapp"/>
+    <meta name="renderer" content="webkit" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>report</title>
 </head>
 <body style="padding:20px; margin:0; overflow-y:auto;">
@@ -284,7 +287,7 @@
 <hr>
 <h2>四、成果內容</h2>
 <h3>4.1 表格測試</h3>
-<div style="text-align:center;"><table style="display: inline-table;">
+<div style="text-align: center;"><table style="display: inline-table;">
 <thead>
 <tr>
 <th>項目</th>
@@ -306,6 +309,43 @@
 <td>介面改善</td>
 <td>80%</td>
 <td>預計下期延伸</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h3>4.1.1 表格字型大小標記（data-for="tab"）</h3>
+<p>以空 div 標記於表格前，data-style-th／data-style-td 分別設定該表 th／td 字型大小，處理後標記自動移除。</p>
+<p>大字級表（th 16pt、td 13pt）：</p>
+<div style="text-align: center;"><table style="display: inline-table;">
+<thead>
+<tr>
+<th style="font-size:16pt;">欄位</th>
+<th style="font-size:16pt;">說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td style="font-size:13pt;">甲</td>
+<td style="font-size:13pt;">大字級示範</td>
+</tr>
+<tr>
+<td style="font-size:13pt;">乙</td>
+<td style="font-size:13pt;">大字級示範</td>
+</tr>
+</tbody></table></div>
+<p>小字級表（僅設 td 8pt，th 維持預設）：</p>
+<div style="text-align: center;"><table style="display: inline-table;">
+<thead>
+<tr>
+<th>代號</th>
+<th>數量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td style="font-size:8pt;">A</td>
+<td style="font-size:8pt;">1</td>
+</tr>
+<tr>
+<td style="font-size:8pt;">B</td>
+<td style="font-size:8pt;">2</td>
 </tr>
 </tbody></table></div>
 <hr>
@@ -378,7 +418,7 @@ python analyze.py --input=data.json --output=report.csv
 </div><hr>
 <h3>7.4 特殊元素</h3>
 <p>前段文字</p>
-<div for="br">​</div>
+<div data-for="br">​</div>
 後段文字<hr>
 <h2>註腳</h2>
 <section class="footnotes" data-footnotes="">
@@ -392,6 +432,5 @@ python analyze.py --input=data.json --output=report.csv
 
         </div>
     
-
-
-</body></html>
+</body>
+</html>

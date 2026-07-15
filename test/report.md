@@ -113,6 +113,30 @@
 
 ---
 
+### 4.1.1 表格字型大小標記（data-for="tab"）
+
+以空 div 標記於表格前，data-style-th／data-style-td 分別設定該表 th／td 字型大小，處理後標記自動移除。
+
+大字級表（th 16pt、td 13pt）：
+
+<div data-for="tab" data-style-th="font-size:16pt;" data-style-td="font-size:13pt;"></div>
+
+| 欄位 | 說明 |
+|------|------|
+| 甲 | 大字級示範 |
+| 乙 | 大字級示範 |
+
+小字級表（僅設 td 8pt，th 維持預設）：
+
+<div data-for="tab" data-style-td="font-size:8pt;"></div>
+
+| 代號 | 數量 |
+|------|------|
+| A | 1 |
+| B | 2 |
+
+---
+
 ### 4.2 程式碼區塊（JavaScript）
 
 ```js
@@ -208,7 +232,7 @@ $$
 ### 7.4 特殊元素
 
 前段文字
-<div for="br"></div>
+<div data-for="br"></div>
 後段文字
 
 ---
