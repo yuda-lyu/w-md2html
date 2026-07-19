@@ -549,6 +549,34 @@ async function md2html(md, opt = {}) {
                     addStyle(td, styleTd)
                 })
             }
+
+            //逐欄樣式: data-style-th-{n} / data-style-td-{n}, n為0起算之欄索引(4欄則n=0~3)
+            //  語意為「第n欄」非「整表第n個cell」, 故逐列取該列第n個th/td套用, 使該欄各列皆生效(如white-space:nowrap讓整欄不換行)
+            //  置於全域data-style-th/td之後, 使逐欄可於全域基礎上追加或覆寫(CSS後宣告優先)
+            each(el.attributes, (attr) => {
+                let ms = attr.name.match(/^data-style-(th|td)-(\d+)$/) //屬性名經HTML解析已小寫化
+                if (!ms) {
+                    return
+                }
+                let add = attr.value || ''
+                if (add === '') {
+                    return
+                }
+                let tag = ms[1].toUpperCase()
+                let idx = cdbl(ms[2])
+                each(tab.querySelectorAll('tr'), (tr) => {
+                    let cells = []
+                    each(tr.children, (c) => {
+                        if (c.tagName === tag) {
+                            cells.push(c)
+                        }
+                    })
+                    let cell = cells[idx]
+                    if (cell) {
+                        addStyle(cell, add)
+                    }
+                })
+            })
         }
         el.remove()
     })

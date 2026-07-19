@@ -137,6 +137,21 @@
 
 ---
 
+### 4.1.2 逐欄樣式標記（data-style-th-{n}／data-style-td-{n}）
+
+n 為 0 起算之欄索引（4 欄則 n=0~3），套用至該欄各列之 th／td。可與全域 data-style-th／data-style-td 併用，逐欄設定後套故可覆寫全域。
+
+下表：全欄 td 10pt（全域）；第 0 欄不換行（轉 docx 時文字不斷行）；第 1 欄表頭置中；第 2 欄字級縮小覆寫全域。
+
+<div data-for="tab" data-style-td="font-size:10pt;" data-style-td-0="white-space:nowrap;" data-style-th-1="text-align:center;" data-style-td-2="font-size:8pt;"></div>
+
+| 項目代號 | 狀態 | 備註說明 |
+|------|------|------|
+| A-001-XYZ | 完成 | 第二欄字級較小 |
+| B-002-ABC | 進行中 | 第二欄字級較小 |
+
+---
+
 ### 4.2 程式碼區塊（JavaScript）
 
 ```js

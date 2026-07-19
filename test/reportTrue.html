@@ -349,6 +349,29 @@
 </tr>
 </tbody></table></div>
 <hr>
+<h3>4.1.2 逐欄樣式標記（data-style-th-{n}／data-style-td-{n}）</h3>
+<p>n 為 0 起算之欄索引（4 欄則 n=0~3），套用至該欄各列之 th／td。可與全域 data-style-th／data-style-td 併用，逐欄設定後套故可覆寫全域。</p>
+<p>下表：全欄 td 10pt（全域）；第 0 欄不換行（轉 docx 時文字不斷行）；第 1 欄表頭置中；第 2 欄字級縮小覆寫全域。</p>
+<div style="text-align: center;"><table style="display: inline-table;">
+<thead>
+<tr>
+<th>項目代號</th>
+<th style="text-align:center;">狀態</th>
+<th>備註說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td style="font-size:10pt;white-space:nowrap;">A-001-XYZ</td>
+<td style="font-size:10pt;">完成</td>
+<td style="font-size:10pt;font-size:8pt;">第二欄字級較小</td>
+</tr>
+<tr>
+<td style="font-size:10pt;white-space:nowrap;">B-002-ABC</td>
+<td style="font-size:10pt;">進行中</td>
+<td style="font-size:10pt;font-size:8pt;">第二欄字級較小</td>
+</tr>
+</tbody></table></div>
+<hr>
 <h3>4.2 程式碼區塊（JavaScript）</h3>
 <pre><code class="hljs language-js"><span class="hljs-keyword">import</span> dayjs <span class="hljs-keyword">from</span> <span class="hljs-string">'dayjs'</span>
 
