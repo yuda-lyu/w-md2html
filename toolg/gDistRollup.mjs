@@ -48,9 +48,27 @@ async function rp() {
         hookNameDist: () => 'md2html',
         // nameDistType: 'kebabCase', //直接由hookNameDist給予
         globals: {
+            'path': 'path',
+            'fs': 'fs',
+            'sharp': 'sharp',
+            // 'highlight.js': 'highlight.js', //給瀏覽器直接用
+            // 'marked': 'marked', //給瀏覽器直接用
+            // 'marked-katex-extension': 'marked-katex-extension', //給瀏覽器直接用
+            // 'marked-footnote': 'marked-footnote', //給瀏覽器直接用
+            // 'marked-highlight': 'marked-highlight', //給瀏覽器直接用
+            'cheerio': 'cheerio',
             'jsdom': 'jsdom',
         },
         external: [
+            'path',
+            'fs',
+            'sharp',
+            // 'highlight.js', //給瀏覽器直接用
+            // 'marked', //給瀏覽器直接用
+            // 'marked-katex-extension', //給瀏覽器直接用
+            // 'marked-footnote', //給瀏覽器直接用
+            // 'marked-highlight', //給瀏覽器直接用
+            'cheerio',
             'jsdom',
         ],
     })
