@@ -1,6 +1,6 @@
 {
   "name": "w-md2html",
-  "version": "1.0.49",
+  "version": "1.0.50",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "dompurify": "^3.4.12",
@@ -11,8 +11,8 @@
     "marked-footnote": "^1.4.0",
     "marked-highlight": "^2.2.4",
     "marked-katex-extension": "5.1.10",
-    "w-image-proc": "^1.0.16",
-    "wsemi": "^1.8.84"
+    "w-image-proc": "^1.0.17",
+    "wsemi": "^1.8.85"
   },
   "devDependencies": {
     "w-package-tools": "^1.1.15"
