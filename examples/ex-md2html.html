@@ -19,6 +19,9 @@
         <div style="display:flex; padding:10px;">
 
             <textarea id="markdown" style="width:500px; height:calc( 96svh - 8px );" oninput="rdr()">
+<div pretitle style="font-size:14pt; text-align:center;">
+    測試範例
+</div>
 
 # 計畫報告
 
@@ -62,19 +65,19 @@
 測試無序巢狀清單
 
 - **資料前處理**
-- 格式轉換
-- 欄位標準化
-- 雜訊清理
+  - 格式轉換
+  - 欄位標準化
+  - 雜訊清理
 
 - **資料分析模組**
-- 統計分析
-- 時間序列模型
-- ARIMA
-- Prophet
+  - 統計分析
+  - 時間序列模型
+    - ARIMA
+    - Prophet
 
 - **視覺化平台**
-- 儀表板建立
-- 自訂圖層呈現
+  - 儀表板建立
+  - 自訂圖層呈現
 
 - **資料流程自動化**：各自獨立運行，且兼顧完整性與流程自動化之執行方式。
 
@@ -82,28 +85,28 @@
 
 - **統計分析**
 
-須說明統計分析之數學模型，以及輸出入之資料格式。
+    須說明統計分析之數學模型，以及輸出入之資料格式。
 
 - **時間序列模型**
 
-須說明所採用之時間序列模型，包含數學基礎、演算法與回測之統計分析結果。
+    須說明所採用之時間序列模型，包含數學基礎、演算法與回測之統計分析結果。
 
 測試有序巢狀清單
 
 1. **資料前處理**
-- 格式轉換
-- 欄位標準化
-- 雜訊清理
+    - 格式轉換
+    - 欄位標準化
+    - 雜訊清理
 
 1. **資料分析模組**
-- 統計分析
-- 時間序列模型
-    - ARIMA
-    - Prophet
+    - 統計分析
+    - 時間序列模型
+      - ARIMA
+      - Prophet
 
 1. **視覺化平台**
-- 儀表板建立
-- 自訂圖層呈現
+    - 儀表板建立
+    - 自訂圖層呈現
 
 1. **資料流程自動化**：各自獨立運行，且兼顧完整性與流程自動化之執行方式。
 
@@ -111,11 +114,11 @@
 
 1. **統計分析**
 
-須說明統計分析之數學模型，以及輸出入之資料格式。
+    須說明統計分析之數學模型，以及輸出入之資料格式。
 
 1. **時間序列模型**
 
-須說明所採用之時間序列模型，包含數學基礎、演算法與回測之統計分析結果。
+    須說明所採用之時間序列模型，包含數學基礎、演算法與回測之統計分析結果。
 
 ---
 
@@ -128,6 +131,45 @@
 | 自動化流程 | 100% | 已完成 |
 | 系統效能優化 | 95% | 尚可持續改善 |
 | 介面改善 | 80% | 預計下期延伸 |
+
+---
+
+### 4.1.1 表格字型大小標記（data-for="tab"）
+
+以空 div 標記於表格前，data-style-th／data-style-td 分別設定該表 th／td 字型大小，處理後標記自動移除。
+
+大字級表（th 16pt、td 13pt）：
+
+<div data-for="tab" data-style-th="font-size:16pt;" data-style-td="font-size:13pt;"></div>
+
+| 欄位 | 說明 |
+|------|------|
+| 甲 | 大字級示範 |
+| 乙 | 大字級示範 |
+
+小字級表（僅設 td 8pt，th 維持預設）：
+
+<div data-for="tab" data-style-td="font-size:8pt;"></div>
+
+| 代號 | 數量 |
+|------|------|
+| A | 1 |
+| B | 2 |
+
+---
+
+### 4.1.2 逐欄樣式標記（data-style-th-{n}／data-style-td-{n}）
+
+n 為 0 起算之欄索引（4 欄則 n=0~3），套用至該欄各列之 th／td。可與全域 data-style-th／data-style-td 併用，逐欄設定後套故可覆寫全域。
+
+下表：全欄 td 10pt（全域）；第 0 欄不換行（轉 docx 時文字不斷行）；第 1 欄表頭置中；第 2 欄字級縮小覆寫全域。
+
+<div data-for="tab" data-style-td="font-size:10pt;" data-style-td-0="white-space:nowrap;" data-style-th-1="text-align:center;" data-style-td-2="font-size:8pt;"></div>
+
+| 項目代號 | 狀態 | 備註說明 |
+|------|------|------|
+| A-001-XYZ | 完成 | 第二欄字級較小 |
+| B-002-ABC | 進行中 | 第二欄字級較小 |
 
 ---
 
@@ -170,9 +212,7 @@ echo "Done."
 
 ### 5.2 圖片插入
 
-<div style="padding-bottom:12px; text-align:left;">
-    <img style="width:100%; max-width:400px;" src="https://cdn.jsdelivr.net/npm/w-demores/res/img/food/001.jpg" />
-</div>
+![測試圖片](./cocktail.svg)
 
 ---
 
@@ -219,8 +259,8 @@ $$
 ### 7.3 刪除隱藏元素
 
 <div style="margin:1rem 0;">
-<div style="margin:1rem 0;">顯示文字</div>
-<div style="margin:1rem 0; display:none;">不能顯示文字</div>
+    <div style="margin:1rem 0;">顯示文字</div>
+    <div style="margin:1rem 0; display:none;">不能顯示文字</div>
 </div>
 
 ---
@@ -228,7 +268,7 @@ $$
 ### 7.4 特殊元素
 
 前段文字
-<docx_br>
+<div data-for="br"></div>
 後段文字
 
 ---

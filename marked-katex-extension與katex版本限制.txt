@@ -1,0 +1,5 @@
+marked-katex-extension: 現釘5.1.13, 不可用5.1.11(其入口改為直接提供ts檔, 導致無法被預設rollup或webpack打包), 5.1.12起已改回提供編譯後之esm(lib/index.esm.js)
+katex: 須維持於marked-katex-extension之peerDependencies範圍內(5.1.13為katex >=0.16 <0.19), 故宣告^0.18.2, 宣告^0.19.0會npm ERESOLVE無法安裝, 待marked-katex-extension支援0.19後再一併升版
+katex: 0.18.11被官方標為deprecated(Accidentally published with breaking changes), ^0.18.2經npm解析為0.18.10, 0.19.0之程式與0.18.11相同
+katex: 0.18起內部class加katex-前綴, 其CSS須與katex同版, md2html已改由katex.version組CSS網址, 勿再寫死版本
+(2026-10-07)

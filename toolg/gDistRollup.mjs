@@ -20,6 +20,7 @@ async function rp() {
             'fs': 'fs',
             'sharp': 'sharp',
             'highlight.js': 'highlight.js',
+            'katex': 'katex', //md2html直接引用katex取version, 須列external否則katex會被打包進w-md2html.umd.js
             'marked': 'marked',
             'marked-katex-extension': 'marked-katex-extension',
             'marked-footnote': 'marked-footnote',
@@ -32,6 +33,7 @@ async function rp() {
             'fs',
             'sharp',
             'highlight.js',
+            'katex',
             'marked',
             'marked-katex-extension',
             'marked-footnote',
@@ -52,6 +54,7 @@ async function rp() {
             'fs': 'fs',
             'sharp': 'sharp',
             // 'highlight.js': 'highlight.js', //給瀏覽器直接用
+            // 'katex': 'katex',
             // 'marked': 'marked', //給瀏覽器直接用
             // 'marked-katex-extension': 'marked-katex-extension', //給瀏覽器直接用
             // 'marked-footnote': 'marked-footnote', //給瀏覽器直接用
@@ -64,6 +67,7 @@ async function rp() {
             'fs',
             'sharp',
             // 'highlight.js', //給瀏覽器直接用
+            // 'katex',
             // 'marked', //給瀏覽器直接用
             // 'marked-katex-extension', //給瀏覽器直接用
             // 'marked-footnote', //給瀏覽器直接用

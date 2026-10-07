@@ -11,6 +11,7 @@ import isWindow from 'wsemi/src/isWindow.mjs'
 import cdbl from 'wsemi/src/cdbl.mjs'
 import replace from 'wsemi/src/replace.mjs'
 import { Marked } from 'marked'
+import katex from 'katex'
 import markedKatex from 'marked-katex-extension'
 import markedFootnote from 'marked-footnote'
 import hljs from 'highlight.js'
@@ -288,7 +289,7 @@ async function md2html(md, opt = {}) {
     //styleSrcs
     let styleSrcs = [
         `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css`, //highlight
-        `https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css`, //KaTeX
+        `https://cdn.jsdelivr.net/npm/katex@${katex.version}/dist/katex.min.css`, //KaTeX, CSS版本須與產出html之katex一致(0.18起內部class加katex-前綴, 版本不符會跑版), 故由katex.version取得
     ]
 
     //styleDef
