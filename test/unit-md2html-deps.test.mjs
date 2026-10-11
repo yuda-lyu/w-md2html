@@ -143,6 +143,48 @@ describe('md2html 依賴契約(升版回歸)', function() {
         assert.strict.equal(out.includes('連結B'), true)
     })
 
+    //規格: 輸出以 innerHTML(如 v-html)置入頁面後不得改變區塊以外之樣式; <style> 會作用於整頁, 故清洗時移除(元素與其內之 CSS 皆不留, 其餘文字保留)
+    it('DOMPurify: 移除使用者內容中之 <style>, 其餘文字保留', async function() {
+        let out = await conv('說明文字\n\n<style>body{background:rgb(255,0,0) !important} .other{display:none !important}</style>')
+        assert.strict.equal(/<style/i.test(out), false)
+        assert.strict.equal(out.includes('background'), false) //CSS 不外漏成可見文字
+        assert.strict.equal(out.includes('說明文字'), true)
+    })
+
+    //規格: 同上; <style> 不論位於開頭、行內、表格儲存格、svg 內或含 @import, 皆移除
+    it('DOMPurify: 開頭、行內、表格內、svg 內與含 @import 之 <style> 皆移除', async function() {
+        let cases = [
+            ['<style>body{background:red}</style>\n\n說明文字', '說明文字'],
+            ['前文<style>p{color:red}</style>後文', '後文'],
+            ['| 欄 |\n|---|\n| <style>body{background:red}</style>格 |', '格</td>'],
+            ['<svg width="10" height="10"><style>body{background:red}</style><circle r="5"></circle></svg>', '<circle'],
+            ['說明\n\n<style>@import url(https://example.com/x.css);</style>', '說明'],
+        ]
+        for (let [md, keep] of cases) {
+            let out = await conv(md)
+            assert.strict.equal(/<style/i.test(out), false, md)
+            assert.strict.equal(/background|color:red|@import/.test(out), false, md)
+            assert.strict.equal(out.includes(keep), true, md)
+        }
+    })
+
+    //規格: 移除對象為 style 元素; 程式碼區塊與行內程式碼中之 <style> 字樣為內容, 照常顯示
+    it('DOMPurify: 程式碼區塊與行內程式碼中之 <style> 字樣照常顯示', async function() {
+        let outBlock = await conv('```\n<style>body{background:red}</style>\n```')
+        assert.strict.equal(outBlock.includes('&lt;style&gt;body{background:red}&lt;/style&gt;'), true)
+        let outInline = await conv('`<style>x{}</style>`')
+        assert.strict.equal(outInline.includes('<code>&lt;style&gt;x{}&lt;/style&gt;</code>'), true)
+    })
+
+    //規格: mergeStyle:true 時套件自身之樣式(styleDef)於清洗之後才加入, 不受影響; 同一輸出只留套件之 <style>
+    it('DOMPurify: mergeStyle:true 仍保留套件自身之 <style>, 使用者之 <style> 移除', async function() {
+        let r = await md2html('說明文字\n\n<style>body{background:red}</style>', { mergeStyle: true })
+        let styles = r.html.match(/<style>[\s\S]*?<\/style>/g) || []
+        assert.strict.equal(styles.length, 1)
+        assert.strict.equal(styles[0].includes('.md {'), true) //套件自身之樣式
+        assert.strict.equal(r.html.includes('background:red'), false) //套件樣式為 background: #eee 等(冒號後有空白), 不會誤判
+    })
+
 })
 
 
@@ -159,6 +201,8 @@ describe('WMd2html 依賴契約(升版回歸)', function() {
             '# 依賴契約',
             '',
             '行內 $x^2$',
+            '',
+            '<style>body{background:rgb(255,0,0) !important}</style>', //使用者內容中之 style 元素, 應被移除
             '',
             '本文[^1]',
             '',
@@ -186,6 +230,14 @@ describe('WMd2html 依賴契約(升版回歸)', function() {
     it('marked-footnote 之 Footnotes 標題被隱藏', function() {
         assert.strict.equal(/<h2 id="footnote-label" class="sr-only" style="[^"]*height:0px;[^"]*overflow:hidden;">Footnotes<\/h2>/.test(h), true)
         assert.strict.equal(h.includes('<h2 id="footnote-label" class="sr-only">'), false) //無未隱藏之標題殘留
+    })
+
+    //規格: 同 md2html 之 <style> 移除; WMd2html 以 mergeStyle:true 輸出, 只留套件自身之 <style>
+    it('使用者內容中之 <style> 移除, 只留套件自身之 <style>', function() {
+        let styles = h.match(/<style>[\s\S]*?<\/style>/g) || []
+        assert.strict.equal(styles.length, 1)
+        assert.strict.equal(styles[0].includes('.md {'), true)
+        assert.strict.equal(h.includes('background:rgb(255,0,0)'), false)
     })
 
     //規格: opt.imgConvertToBase64 預設 true「圖片是否自動轉Base64」(WMd2html.mjs), 經 async walkTokens 轉換
