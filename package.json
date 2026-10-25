@@ -1,6 +1,6 @@
 {
   "name": "w-md2html",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "dompurify": "^3.4.16",

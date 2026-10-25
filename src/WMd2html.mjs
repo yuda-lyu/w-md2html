@@ -7,6 +7,7 @@ import trim from 'lodash-es/trim.js'
 import join from 'lodash-es/join.js'
 import drop from 'lodash-es/drop.js'
 import size from 'lodash-es/size.js'
+import uniq from 'lodash-es/uniq.js'
 import isbol from 'wsemi/src/isbol.mjs'
 import isestr from 'wsemi/src/isestr.mjs'
 import isfun from 'wsemi/src/isfun.mjs'
@@ -155,6 +156,80 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return pretitle
     }
 
+    //取屬性值, attrs為標籤名稱之後的屬性字串, 屬性值可含>與空白, 無此屬性回傳null, 屬性不帶值回傳空字串; 空白只認html之空白字元(不含U+00A0), 與html解析器一致
+    let getAttr = (attrs, name) => {
+        let reAttr = /([^ \t\n\f\r"'<>/=]+)(?:[ \t\n\f\r]*=[ \t\n\f\r]*(?:"([^"]*)"|'([^']*)'|([^ \t\n\f\r>]+)))?/g
+        let r = null
+        let m = reAttr.exec(attrs)
+        while (m !== null) {
+            if (r === null && m[1].toLowerCase() === name) {
+                r = m[2] ?? m[3] ?? m[4] ?? ''
+            }
+            m = reAttr.exec(attrs)
+        }
+        return r
+    }
+
+    //取圖表名, 只取「圖n」「表n」所在之文字: 圖片與圖題寫在同一行時, 有src之<img>須先移除, 否則html2str會將其轉為「alt [src]」併入圖表名, 使圖表名對不上內文之{圖表名}
+    //  以註解或標籤為單位由左而右掃描(屬性值可含<與>), 故註解內或其他標籤屬性值內的「<img」字樣不會被當成圖片; 移除圖片後留下之無文字連結(<a href><img></a>)亦移除, 否則html2str會輸出其href
+    //  無src(含src為空)之<img>維持原狀(html2str僅輸出alt), 沒有移除任何圖片時該行與修正前完全相同; 有移除圖片時, 若轉為純文字後已不含「圖n」(原本只在被移除之img屬性或其他標籤之屬性內)則非圖題, 回傳null不登記, 避免以空名稱或他字覆寫真正之圖題
+    let getItemName = async (v, type) => {
+        let rm = false
+        let t = v.replace(/<!--[\s\S]*?(?:-->|$)|<([A-Za-z][^ \t\n\f\r/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g, (m, name, attrs) => {
+            if (name !== undefined && name.toLowerCase() === 'img' && getAttr(attrs, 'src')) {
+                rm = true
+                return '\u0001' //以記號標示被移除之圖片位置, 供下方判斷連結是否因此變空
+            }
+            return m
+        })
+        if (rm) {
+            //連結之內容只剩空白, 標籤, 註解與被移除之圖片(至少一個)時, 連結一併移除; 原本就沒有文字之連結(與圖片無關者)不動
+            let sk = String.raw`[ \t\n\f\r]|<!--[\s\S]*?-->|<\/?[A-Za-z](?:[^>"']|"[^"]*"|'[^']*')*>`
+            t = t.replace(new RegExp(String.raw`<a(?:[ \t\n\f\r](?:[^>"']|"[^"]*"|'[^']*')*)?>(?:${sk})*\u0001(?:${sk}|\u0001)*<\/a[ \t\n\f\r]*>`, 'gi'), '')
+            t = t.replaceAll('\u0001', '')
+        }
+        t = await html2str(t)
+        if (rm && t.indexOf(`${type}n`) < 0) {
+            return null
+        }
+        t = replace(t, `${type}n`, '')
+        t = trim(t)
+        return `{${t}}`
+    }
+
+    //取得輸出(最終html)之可見文字中仍殘留之{…}(即圖表編號與模板符號取代後仍對不上任何圖表名者): 以渲染後之html為準, 移除程式碼(code, pre)、數學式(math, katex)、style與script後, 於區塊邊界以換行分隔之文字取出
+    //  文字節點內之空白(含軟換行)依html規則視為單一空白; 被移除之元素與區塊邊界以換行取代, 故不會拼出原文不存在之字串, 也不會將跨越程式碼或區塊之大括號視為一對
+    //  屬性值(alt, title, href)不是可見文字不檢查; 逸出之大括號在輸出中是可見文字故會列出; math與katex: KaTeX同時輸出MathML與顯示層(後者含字面之大括號, 如\{x\}); style: 套件自身之樣式含選項值(如fontFamilies), 可能出現單行之{…}; script: 使用者內容中者已於md2html清洗時移除, 自訂模板(htmlTemp)中者仍在
+    //  inline以外之元素皆視為區塊(清洗後只剩標準html/svg元素, 預設顯示皆已知), 不依CSS實際顯示
+    let getUnresolvedRefs = async (html) => {
+        let inlineTags = new Set(['a', 'abbr', 'acronym', 'audio', 'b', 'bdi', 'bdo', 'big', 'button', 'canvas', 'cite', 'data', 'del', 'dfn', 'em', 'embed', 'font', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'mark', 'meter', 'nobr', 'object', 'output', 'picture', 'progress', 'q', 'rp', 'rt', 'ruby', 's', 'samp', 'select', 'small', 'source', 'span', 'strike', 'strong', 'sub', 'sup', 'svg', 'textarea', 'time', 'tt', 'u', 'var', 'video', 'wbr'])
+        let clib = 'jsdom'
+        let { JSDOM } = await import(clib)
+        let { window } = new JSDOM(html)
+        let doc = window.document
+        let box = doc.body
+        let tw = doc.createTreeWalker(box, window.NodeFilter.SHOW_TEXT)
+        let nds = []
+        while (tw.nextNode()) {
+            nds.push(tw.currentNode)
+        }
+        each(nds, (nd) => {
+            nd.nodeValue = nd.nodeValue.replace(/[ \t\n\f\r]+/g, ' ')
+        })
+        each(box.querySelectorAll('code, pre, style, script, math, .katex, .katex-error'), (el) => {
+            el.replaceWith('\n')
+        })
+        each(box.querySelectorAll('*'), (el) => {
+            if (!inlineTags.has(el.localName)) {
+                el.before('\n')
+                el.after('\n')
+            }
+        })
+        let txt = box.textContent.replace(/ {2,}/g, ' ') //相鄰文字節點各自折疊後可能留下連續空白
+        window.close()
+        return uniq(txt.match(/\{[^{}\n]*[^{}\s][^{}\n]*\}/g) || [])
+    }
+
     let cvItemNum = async(md, type) => {
         let s = split(md, '\n') //不能用sep避免md內手動分行消失
         let i = 0
@@ -172,12 +247,10 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
                 vv = replace(v, `${type}n`, nn)
 
                 //儲存圖表名對應之圖表編號
-                let t = v
-                t = await html2str(t)
-                t = replace(t, `${type}n`, '')
-                t = trim(t)
-                t = `{${t}}`
-                kp[t] = nn
+                let t = await getItemName(v, type)
+                if (t !== null) {
+                    kp[t] = nn
+                }
                 // console.log(t, '-->', kp[t])
 
             }
@@ -489,6 +562,17 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     //li不能於head給予style無法轉docx, 改為個別給予style, 且margin不支援rem須給px
     if (true) {
         h = h.replaceAll(`<li>`, `<li style="margin:7px 0;">`)
+    }
+
+    //圖表編號與模板符號取代後仍對不上任何圖表名之{…}會原樣殘留於輸出, 輸出警告並列出, 不中斷轉換
+    try {
+        let ms = await getUnresolvedRefs(h)
+        if (size(ms) > 0) {
+            console.log(`warning: ${size(ms)} reference(s) match no figure/table name: ${join(ms, ', ')}`)
+        }
+    }
+    catch (err) {
+        console.log(err)
     }
 
     //funProcFpOut
