@@ -1,6 +1,6 @@
 {
   "name": "w-md2html",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "dompurify": "^3.4.16",
@@ -15,6 +15,7 @@
     "wsemi": "^1.9.25"
   },
   "devDependencies": {
+    "sharp": "^0.35.5",
     "w-package-tools": "^1.1.21"
   },
   "scripts": {

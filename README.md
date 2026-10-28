@@ -17,6 +17,18 @@ To view some examples for more understanding, visit examples:
 
 ## Upgrade Notes
 
+### Breaking changes after 1.1.11：本機圖片之引用（路徑模式、缺圖 reject、base64 總量上限）
+
+**破壞性變更**（`WMd2html`；不保留舊行為，下游須連帶修正）。
+- **`imgConvertToBase64: false`：md 語法圖與原始 `<img src="…">` 行之本機圖，一律改寫為以 md 所在資料夾解析之絕對路徑**（Windows 為反斜線形式，如 `C:\docs\圖 資料夾\a b.png`；路徑原樣寫入，不做百分比編碼，僅逸出屬性值內之 `& " < >`），不讀取、不轉碼。Word 只能解析反斜線絕對路徑，正斜線絕對路徑與百分比編碼皆不可解析，故不採用。輸出之 html 含本機路徑而不可攜，僅供同機之後續處理（如轉 Word 之中介 html）；要自足 html 請用預設（`true`）。過去：md 語法圖保留原 `href`，原始 `<img>` 行不受此選項控制，仍被轉為 base64（給 `false` 仍可能因字串過長而失敗）。
+- **路徑模式下 SVG 與 JPG 保持原檔**：不再經 `sharp` 重新編碼（過去 SVG 以 96 dpi 點陣化為 PNG、JPG 轉為 PNG），由後續處理讀取原檔（轉 Word 時 SVG 以向量、JPG 以原檔內嵌）。DPI 不為 96 之 JPG，Word 依 96 dpi 計顯示尺寸，與瀏覽器之 CSS px 一致（過去轉 PNG 時保留原 DPI，顯示尺寸不同）。
+- **圖片檔不存在一律 reject**（兩種模式；md 語法圖與原始 `<img>` 行皆然）：訊息為 `N image file(s) do not exist:` 之後逐行列出全部缺圖之絕對路徑（同一缺圖只列一次）。過去 md 語法圖缺圖只 `console.log` 後保留原 `href`，原始 `<img>` 行缺圖則丟出只含第一個缺圖之錯誤。只檢查輸出中實際引用之圖（如 HTML 註解內之 `<img>` 不進輸出，不檢查）。
+- **本機圖一律以 md 所在資料夾解析**（絕對路徑照用）：過去原始 `<img>` 行先以工作目錄（cwd）解析，cwd 下恰有同名檔時會誤用。`%XX` 不解碼，檔名須與引用之字面一致。
+- **非本機圖不處理、不 reject**：具通訊協定之網址（`https:`、`data:`、`file:` 等）、協定相對網址（`//host/x.png`）、錨點（`#x`）與空值維持原樣（過去原始 `<img>` 行遇網址會丟 `fp[…] does not exist`，md 語法圖則 `console.log` 後保留）。
+- **`imgConvertToBase64: true`（預設）：圖片總量過大時明確 reject**：轉換前依原檔大小估算內嵌之 base64 字元總量（同一圖多處引用逐處計），超過上限（2^27 字元＝134,217,728，約 96 MiB 之 PNG）即 reject，訊息指出張數、檔案總量、估算字元數、上限與「改用 `imgConvertToBase64: false` 或減少圖片」；轉碼後再依實際長度檢查一次（JPG、SVG 重新編碼為 PNG 後可能遠大於原檔）。過去超過約 80～100 MB（預設堆積）時行程直接中止（離開碼 134，呼叫端收不到 reject）或丟出 `Invalid string length`（訊息指向 marked）。未超過上限者之輸出與過去逐字相同（各圖重新編碼為 PNG 內嵌）。
+- **處理方式之改變（輸出不變）**：圖片改為先登記、待 md 轉 html 完成後才寫入 `src`，base64 資料不再經過 marked、DOMPurify 與 jsdom（過去其記憶體約為 html 字元數之 35 倍）。實測 150 張（82 MB）之 md 轉換，峰值 RSS 由約 4294 MB 降為 649 MB。
+- **遷移**：依賴 `imgConvertToBase64: false` 保留相對路徑者（例如把輸出 html 放在別處再載入）須改為預設 `true`，或自行處理路徑；缺圖由「記錄後繼續」改為 reject，呼叫端須處理；下游 w-md2docx 以 `imgConvertToBase64: false` 產生中介 html、並由 w-html2docx 內嵌圖片（另案連動）。已知限制（與本版前相同）：同一行寫兩個以上 `<img src="…">` 仍會丟 `size(s)!==2`；原始 `<img>` 只處理雙引號之 `src="…"`（單引號與無引號寫法不處理）。
+
 ### Behavior change after 1.1.9：圖題與 `<img>` 同一行時圖表名之取法，以及對不上圖表名之 `{…}` 警告
 
 **行為變更**（`WMd2html`，兩處）。

@@ -5,7 +5,8 @@ import each from 'lodash-es/each.js'
 import split from 'lodash-es/split.js'
 import trim from 'lodash-es/trim.js'
 import join from 'lodash-es/join.js'
-import drop from 'lodash-es/drop.js'
+import map from 'lodash-es/map.js'
+import filter from 'lodash-es/filter.js'
 import size from 'lodash-es/size.js'
 import uniq from 'lodash-es/uniq.js'
 import isbol from 'wsemi/src/isbol.mjs'
@@ -20,6 +21,14 @@ import getPathParent from 'wsemi/src/getPathParent.mjs'
 import fsIsFile from 'wsemi/src/fsIsFile.mjs'
 import wi from 'w-image-proc/src/WImageProc.mjs'
 import md2html from './md2html.mjs'
+
+
+//imgConvertToBase64為true時, 內嵌於輸出html之圖片base64字元總量(各data URL長度之合計, 同圖多處引用逐處計)上限: 2^27字元, 約96MiB之PNG
+//  依據(2026-10-29, Node v24.22.1, 1600x900雜訊PNG每張0.52MiB): 圖片不經DOM後, 處理之峰值記憶體隨base64總字元數線性成長(RSS約為其4.5~5倍, 堆積約1~2倍),
+//  245張(1.78億字元)於堆積上限576MB下通過, 300張(2.18億字元)於堆積上限576MB下OOM, 於704MB下通過; 本上限(1.34億字元)於堆積上限576MB下有約1.3倍餘裕,
+//  與字串長度上限(V8, 536,870,888字元)相距甚遠; 超過者請改用imgConvertToBase64: false
+//  修前(圖片隨html進DOMPurify與jsdom, 堆積約為字元數之35倍): 預設堆積4288MB下約80~100MB之圖片即OOM中止行程(審計md2docx-run01 E1b)
+const IMG_BASE64_MAX_CHARS = 2 ** 27
 
 
 /**
@@ -52,7 +61,7 @@ import md2html from './md2html.mjs'
  * @param {String} [opt.textAlignH6='left'] 輸入h6對齊方式，可使用'left'、'center'、'right'，預設'left'
  * @param {Number|String} [opt.imgWidthMax=null] 輸入圖片樣式給予最大寬度，可輸入數字500單位為px，或是字串例如'100%'，預設null
  * @param {String} [opt.htmlTemp=null] 輸入模板字串，其內須取代{title}與{html}，預設null
- * @param {Boolean} [opt.imgConvertToBase64=true] 輸入圖片是否自動轉Base64布林值，預設true
+ * @param {Boolean} [opt.imgConvertToBase64=true] 輸入本機圖片是否自動轉Base64內嵌布林值，預設true。md語法圖與原始<img src="">行皆以md所在資料夾解析路徑(絕對路徑則照用)，具通訊協定(如https:、data:)之網址不處理。true時輸出為自足html，各圖重新編碼為PNG內嵌，圖片總量過大(base64合計超過上限)則reject。false時不讀取、不轉碼，圖片src改寫為本機絕對路徑(Windows為反斜線形式，Word可解析；正斜線與百分比編碼不可)，輸出html不可攜，僅供同機之後續處理(如轉Word)。兩種模式下，圖片檔不存在皆reject，訊息列出全部缺圖路徑
  * @param {Function} [opt.funProcFpOut=null] 輸入處理輸出檔名函數，函數會傳入{fpOut,pretitle}，分別為原始輸出檔位置與提取Markdown內pretitle區文字，預設null
  * @returns {Promise} 回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息
  * @example
@@ -270,63 +279,108 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return h
     }
 
-    let cvPicB64 = async (fd, md) => {
+    //本機圖片引用: md語法圖(walkTokens)與原始<img src="">行(cvPicRef)皆只登記並暫以佔位符取代src, 待md2html完成後再依imgConvertToBase64一次寫入(fillImgs)
+    //  why 佔位符: ①DOMPurify會移除值為Windows絕對路徑(C:\...)之src(視為未知通訊協定), 絕對路徑只能於清洗之後寫入; ②圖片之data URL不經marked, DOMPurify與jsdom, 其堆積不隨圖片總量放大(清洗後堆積約為html字元數之35倍)
+    //  路徑一律以md所在資料夾解析(絕對路徑照用), 同一檔共用一個佔位符; 空值, 具通訊協定(https:, data:, file:等), 協定相對(//)與錨點(#)者非本機圖, 維持原值不處理
+    let phImg = '' //佔位符前綴, 讀入md後決定
+    let fpsImg = [] //已登記之圖片絕對路徑, 佔位符之編號即其索引
+    let kpFpImg = {} //絕對路徑對應之編號
+    let regImg = (ref) => {
+        if (!isestr(ref) || /^(?:[A-Za-z][A-Za-z0-9+.-]+:|\/\/|#)/.test(ref)) { //協定至少2字元, 故磁碟代號(C:\)不誤判為協定
+            return null
+        }
+        let fp = path.resolve(fdIn, ref)
+        if (kpFpImg[fp] === undefined) {
+            kpFpImg[fp] = size(fpsImg)
+            fpsImg.push(fp)
+        }
+        return `${phImg}${kpFpImg[fp]}`
+    }
 
-        let gsrc = async (c) => {
-
-            //s1s
+    //原始<img src="">行(逐行處理, 一行須恰有一個src=")
+    let cvPicRef = (md) => {
+        let gsrc = (c) => {
             let s = split(c, 'src="')
             if (size(s) !== 2) {
                 throw new Error(`size(s)!==2`)
             }
-            let s0 = s[0]
-            let s1 = s[1]
-            let s1s = split(s1, '"')
-
-            //fp
-            let fnp = s1s[0]
-            let fp = ''
-            if (fsIsFile(fnp)) {
-                fp = fnp
+            let s1s = split(s[1], '"')
+            let ph = regImg(s1s[0])
+            if (ph === null) {
+                return c
             }
-            else {
-                fp = `${fd}/${fnp}`
-                if (!fsIsFile(fp)) {
-                    console.log('c', c)
-                    console.log('fnp', fnp)
-                    throw new Error(`fp[${fp}] does not exist`)
-                }
+            s1s[0] = ph
+            return s[0] + 'src="' + join(s1s, '"')
+        }
+        let tt = map(split(md, '\n'), (v) => {
+            return v.indexOf('src="') >= 0 ? gsrc(v) : v
+        })
+        return join(tt, '\n')
+    }
+
+    //輸出html之圖片src寫入: 先檢查各圖檔是否存在(缺圖一次列出全部), base64模式再檢查總量, 通過後才轉碼; 於md2html完成後呼叫, 此時html仍只含佔位符
+    let fillImgs = async (h) => {
+
+        //各圖於輸出中之引用次數, 未出現於輸出者(如被清洗移除)不檢查亦不處理
+        let reImg = new RegExp(`src="${phImg}(\\d+)"`, 'g')
+        let cnt = new Array(size(fpsImg)).fill(0)
+        for (let m of h.matchAll(reImg)) {
+            cnt[Number(m[1])]++
+        }
+        let ids = []
+        each(cnt, (c, i) => {
+            if (c > 0) {
+                ids.push(i)
             }
-            // console.log('fnp', fnp)
-            // console.log('fp', fp)
+        })
 
-            //pb64
-            // let pb64 = await readPicB64(fp)
-            let pb64 = await wi.base64(fp, 'png')
-            // console.log(fp, 'b64', b64)
-
-            //drop
-            s1s = drop(s1s)
-
-            //merge
-            let r = s0 + 'src="' + pb64 + '"' + join(s1s, '"')
-
-            return r
+        //缺圖
+        let fpsNo = filter(map(ids, (i) => fpsImg[i]), (fp) => !fsIsFile(fp))
+        if (size(fpsNo) > 0) {
+            throw new Error(`${size(fpsNo)} image file(s) do not exist:\n${join(fpsNo, '\n')}`)
         }
 
-        let tt = []
-        let s = split(md, '\n')
-        await pmSeries(s, async (v) => {
-            let b = v.indexOf('src="') >= 0
-            if (b) {
-                v = await gsrc(v)
-            // console.log(v)
-            }
-            tt.push(v)
-        })
-        tt = join(tt, '\n')
+        //urls
+        let urls = {}
+        if (imgConvertToBase64) {
 
-        return tt
+            //總量, 以原檔大小估算data URL長度(重新編碼為PNG後之大小須轉完才知, 於轉碼中再依實際長度檢查)
+            let msgOver = (nChar, nb, bEst) => {
+                let mb = (n) => (n / 1048576).toFixed(1)
+                return `images are too large to embed as base64 (imgConvertToBase64=true): ${size(ids)} image file(s), ${mb(nb)} MB, ${bEst ? 'estimated ' : ''}${nChar} chars of base64 data in one html string, over the limit of ${IMG_BASE64_MAX_CHARS} chars (${mb(IMG_BASE64_MAX_CHARS)} MB of base64 text, about ${mb(IMG_BASE64_MAX_CHARS * 3 / 4)} MB of image data); set imgConvertToBase64=false to reference the image files by absolute path instead, or reduce the images`
+            }
+            let nb = 0 //原檔位元組合計(各圖一次)
+            let nEst = 0 //data URL長度之估算(逐處計)
+            each(ids, (i) => {
+                let n = fs.statSync(fpsImg[i]).size
+                nb += n
+                nEst += Math.ceil(n / 3) * 4 * cnt[i]
+            })
+            if (nEst > IMG_BASE64_MAX_CHARS) {
+                throw new Error(msgOver(nEst, nb, true))
+            }
+
+            //轉碼, 依序處理以限制同時暫存之圖片量; 各檔轉一次, 同檔多處引用共用同一字串
+            let nChar = 0
+            for (let i of ids) {
+                urls[i] = await wi.base64(fpsImg[i], 'png')
+                nChar += size(urls[i]) * cnt[i]
+                if (nChar > IMG_BASE64_MAX_CHARS) {
+                    throw new Error(msgOver(nChar, nb, false))
+                }
+            }
+
+        }
+        else {
+
+            //絕對路徑原樣寫入(不轉碼, 不編碼), 僅逸出屬性值內之&, ", <, >; Windows下path.resolve即為反斜線形式
+            each(ids, (i) => {
+                urls[i] = fpsImg[i].replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+            })
+
+        }
+
+        return h.replace(reImg, (m, i) => `src="${urls[i]}"`)
     }
 
     // //tableBorderColor
@@ -458,10 +512,6 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     let title = getFileTrueName(fpIn)
     // console.log('title', title)
 
-    //fdInMd
-    let fdInMd = getPathParent(fpIn)
-    // console.log('fdInMd', fdInMd)
-
     //md
     let md = fs.readFileSync(fpIn, 'utf8')
 
@@ -477,36 +527,21 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     md = await cvItemNum(md, '表')
     // console.log(md)
 
-    //cvPicB64
-    md = await cvPicB64(fdInMd, md)
+    //phImg, 佔位符不得與md或模板內文字重複
+    phImg = 'wmd2htmlimg'
+    while (md.includes(phImg) || htmlTemp.includes(phImg)) {
+        phImg += 'x'
+    }
+
+    //cvPicRef
+    md = cvPicRef(md)
 
     //walkTokens
-    let walkTokens = async (token) => {
+    let walkTokens = (token) => {
         if (token.type === 'image') {
-            if (imgConvertToBase64) {
-                try {
-
-                    //fpHref
-                    let fpHref = path.resolve(fdIn, token.href)
-                    // console.log('fpHref', fpHref)
-
-                    //check
-                    if (fsIsFile(fpHref)) {
-
-                        //readPicB64
-                        // token.href = await readPicB64(fpHref)
-                        token.href = await wi.base64(fpHref, 'png')
-                        // console.log('hf', hf)
-
-                    }
-                    else {
-                        console.log(`href[${token.href}] does not exist`)
-                    }
-
-                }
-                catch (err) {
-                    console.log(err)
-                }
+            let ph = regImg(token.href)
+            if (ph !== null) {
+                token.href = ph
             }
         }
     }
@@ -574,6 +609,9 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     catch (err) {
         console.log(err)
     }
+
+    //圖片src寫入(缺圖或base64總量過大則reject), 於警告偵測之後, 使其解析之html不含base64資料
+    h = await fillImgs(h)
 
     //funProcFpOut
     if (isfun(funProcFpOut)) {
