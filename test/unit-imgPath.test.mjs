@@ -58,13 +58,16 @@ describe('unit-imgPath 圖片引用之處理(路徑模式, 缺圖, base64總量�
         return { msg, outExists: fs.existsSync(fpOut) }
     }
 
-    //以DOM取各<img>之src屬性值(與逸出方式無關, 為使用者端實際解析之值)
-    let srcs = (html) => {
+    //以DOM取各標籤(預設<img>)之指定屬性值(與逸出方式無關, 為使用者端實際解析之值), 無此屬性者為null
+    let attrsOf = (html, attr, tag = 'img') => {
         let { window } = new JSDOM(html)
-        let r = Array.from(window.document.querySelectorAll('img')).map((el) => el.getAttribute('src'))
+        let r = Array.from(window.document.querySelectorAll(tag)).map((el) => el.getAttribute(attr))
         window.close()
         return r
     }
+
+    //以DOM取各<img>之src屬性值
+    let srcs = (html) => attrsOf(html, 'src')
 
     before(function() {
         fs.rmSync(fdBase, { recursive: true, force: true })
@@ -375,6 +378,203 @@ describe('unit-imgPath 圖片引用之處理(路徑模式, 缺圖, base64總量�
         it('無本機圖(或僅網址圖)之md不受影響', async function() {
             let r = await conv('no-img', '# t\n\n文字\n\n![a](https://example.com/a.png)', {})
             assert.strict.deepEqual(srcs(r.html), ['https://example.com/a.png'])
+        })
+
+    })
+
+    //原始<img>之src屬性解析(排程第173項): 雙引號, 單引號, 無引號與同行多個皆與md語法圖同一流程登記與填入
+    //  修前: 只處理逐行恰一個src=", 同行兩個丟size(s)!==2, 單引號與無引號保持原值(路徑模式留相對路徑, base64模式不內嵌), data-src與他標籤之src被誤登記, 程式碼內之文字被登記或殘留佔位符
+    describe('原始<img>之src屬性解析(引號形態, 同行多個, 屬性名稱, 語境)', function() {
+
+        //各檔內容不同之1x1 PNG, 使base64模式下各圖之data URL可區分
+        let pics = {}
+
+        before(async function() {
+            for (let [k, rgb] of Object.entries({ a: { r: 255, g: 0, b: 0 }, b: { r: 0, g: 255, b: 0 }, c: { r: 0, g: 0, b: 255 } })) {
+                pics[k] = await sharp({ create: { width: 1, height: 1, channels: 3, background: rgb } }).png().toBuffer()
+            }
+        })
+
+        let putPics = (fd) => {
+            for (let k of ['a', 'b', 'c']) {
+                put(fd, `pics/${k}.png`, pics[k])
+            }
+        }
+
+        //各圖預期之src: 路徑模式為以案資料夾解析之絕對路徑, base64模式為wi.base64之data URL
+        let expOf = async (fd, rels, b) => {
+            let r = []
+            for (let rel of rels) {
+                let fp = path.join(fd, ...rel.split('/'))
+                r.push(b ? await wi.base64(fp, 'png') : fp)
+            }
+            return r
+        }
+
+        //每一案於兩種模式各跑一次(同一流程填入: 路徑模式寫絕對路徑, base64模式內嵌)
+        let eachMode = (title, fn) => {
+            for (let b of [false, true]) {
+                it(`imgConvertToBase64=${b}: ${title}`, async function() {
+                    await fn(b)
+                })
+            }
+        }
+
+        //規格: src值為雙引號, 單引號或無引號皆登記(含等號兩側空白, 標籤與屬性名大小寫, 前後有其他屬性), 其他屬性保留
+        eachMode('src為雙引號, 單引號, 無引號(含等號兩側空白, 大小寫, 前後有他屬性)皆登記並填入', async (b) => {
+            let forms = [
+                '<img src="pics/a.png">',
+                '<img src=\'pics/a.png\'>',
+                '<img src=pics/a.png>',
+                '<img src=pics/a.png />',
+                '<img src = \'pics/a.png\' >',
+                '<IMG SRC=\'pics/a.png\'>',
+                '<img alt="x" src=\'pics/a.png\' style="width:10px;">',
+            ]
+            let r = await conv(`form-${b}`, forms.join('\n\n'), { imgConvertToBase64: b }, putPics)
+            assert.strict.deepEqual(srcs(r.html), await expOf(r.fd, forms.map(() => 'pics/a.png'), b))
+            assert.strict.equal(r.html.includes('wmd2htmlimg'), false) //佔位符不殘留
+            assert.strict.equal(attrsOf(r.html, 'alt')[6], 'x')
+            assert.strict.equal(attrsOf(r.html, 'style')[6].includes('width:10px'), true)
+        })
+
+        //規格(缺陷): 同一行多個<img>不丟size(s)!==2, 各自登記(引號形態可混用, 同圖可重複)
+        eachMode('同一行多個<img>(雙引號, 單引號, 無引號混用, 同圖重複)全部登記', async (b) => {
+            let r = await conv(`multi-${b}`, [
+                '<img src="pics/a.png"><img src=\'pics/b.png\'><img src=pics/c.png>',
+                '',
+                '<img src=\'pics/a.png\'> 文字 <img src=\'pics/a.png\'>',
+            ].join('\n'), { imgConvertToBase64: b }, putPics)
+            assert.strict.deepEqual(srcs(r.html), await expOf(r.fd, ['pics/a.png', 'pics/b.png', 'pics/c.png', 'pics/a.png', 'pics/a.png'], b))
+        })
+
+        //規格: md語法圖與原始<img>同一行混合, 依文字順序登記與填入
+        eachMode('同一行md語法圖與原始<img>混合', async (b) => {
+            let r = await conv(`mix-${b}`, '![x](pics/a.png) <img src=\'pics/b.png\'> ![y](pics/c.png) <img src="pics/a.png"> <img src=pics/b.png>', { imgConvertToBase64: b }, putPics)
+            assert.strict.deepEqual(srcs(r.html), await expOf(r.fd, ['pics/a.png', 'pics/b.png', 'pics/c.png', 'pics/a.png', 'pics/b.png'], b))
+        })
+
+        //規格: 缺圖一律reject並列全部(含同行多個, 單引號, 無引號, md語法圖), 存在者不列
+        eachMode('同行多個與各引號形態之缺圖一次列出全部, 存在者不列', async (b) => {
+            let err = await convErr(`miss-${b}`, '<img src=\'pics/m1.png\'><img src=pics/m2.png><img src="pics/a.png"> ![z](pics/m3.png)', { imgConvertToBase64: b }, putPics)
+            let fd = path.join(fdBase, `miss-${b}`)
+            assert.strict.equal(err.msg.startsWith('3 image file(s) do not exist'), true, err.msg)
+            for (let rel of ['pics/m1.png', 'pics/m2.png', 'pics/m3.png']) {
+                assert.strict.equal(err.msg.includes(path.join(fd, ...rel.split('/'))), true, rel)
+            }
+            assert.strict.equal(err.msg.includes(path.join(fd, 'pics', 'a.png')), false)
+            assert.strict.equal(err.outExists, false)
+        })
+
+        //規格: 屬性名稱須完整相等(data-src, alt內含src字樣皆不是src); 修前data-src使同行丟錯, alt內之src="…"被誤登記且佔位符殘留於alt
+        eachMode('屬性名稱須完整相等: data-src與alt內之src字樣不干擾真正之src', async (b) => {
+            let r = await conv(`attr-${b}`, [
+                '<img data-src="lazy.png" src="pics/a.png">',
+                '',
+                '<img alt=\'my src="x.png"\' src=pics/b.png>',
+                '',
+                '<img alt="src=y.png" src=\'pics/c.png\'>',
+            ].join('\n'), { imgConvertToBase64: b }, putPics)
+            assert.strict.deepEqual(srcs(r.html), await expOf(r.fd, ['pics/a.png', 'pics/b.png', 'pics/c.png'], b))
+            assert.strict.deepEqual(attrsOf(r.html, 'data-src'), ['lazy.png', null, null])
+            assert.strict.deepEqual(attrsOf(r.html, 'alt'), [null, 'my src="x.png"', 'src=y.png'])
+            assert.strict.equal(r.html.includes('wmd2htmlimg'), false)
+        })
+
+        //規格: 同一標籤有多個src時只取第一個(與html解析器一致)
+        it('同一標籤有多個src: 只取第一個', async function() {
+            let r = await conv('dup-src', '<img src=\'pics/a.png\' src="pics/b.png">', { imgConvertToBase64: false }, putPics)
+            assert.strict.deepEqual(srcs(r.html), [path.join(r.fd, 'pics', 'a.png')])
+        })
+
+        //規格: 單引號值內可含雙引號, 雙引號值內可含單引號, 中文與空白; 缺檔訊息列出含雙引號之完整路徑(Windows無法建含"之檔名, 故以缺圖訊息驗證)
+        it('src值內含另一種引號, 中文與空白: 單引號值含"之路徑完整列於缺圖訊息, 其餘照填', async function() {
+            let err = await convErr('quote-miss', '<img src=\'q"x.png\'>', { imgConvertToBase64: false })
+            assert.strict.equal(err.msg.includes(path.join(fdBase, 'quote-miss', 'q"x.png')), true, err.msg)
+            let r = await conv('quote-ok', '<img src=\'圖 資料夾/圖 c.png\'>\n\n<img src="pics/it\'s.png">', { imgConvertToBase64: false }, (fd) => {
+                put(fd, '圖 資料夾/圖 c.png')
+                put(fd, 'pics/it\'s.png')
+            })
+            assert.strict.deepEqual(srcs(r.html), [path.join(r.fd, '圖 資料夾', '圖 c.png'), path.join(r.fd, 'pics', 'it\'s.png')])
+        })
+
+        //規格: 標籤屬性可跨行(屬性在不同行, 無引號與雙引號)
+        eachMode('標籤屬性跨行', async (b) => {
+            let r = await conv(`line-${b}`, '<img\n  alt=\'x\'\n  src=pics/a.png>\n\n<img\n src="pics/b.png"\n alt="y">', { imgConvertToBase64: b }, putPics)
+            assert.strict.deepEqual(srcs(r.html), await expOf(r.fd, ['pics/a.png', 'pics/b.png'], b))
+        })
+
+        //規格: 非本機圖(網址, //, #, 空值, 無值, data:)於單引號與無引號寫法亦不處理不reject
+        eachMode('非本機圖(單引號與無引號之網址, //, #, 空值, 無值, data:)不處理且不reject', async (b) => {
+            let data = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+            let r = await conv(`url-${b}`, [
+                '<img src=\'https://example.com/d.png\'>',
+                '',
+                '<img src=//example.com/c.png>',
+                '',
+                '<img src=#frag>',
+                '',
+                '<img src=\'\'>',
+                '',
+                '<img src>',
+                '',
+                `<img src='${data}'>`,
+            ].join('\n'), { imgConvertToBase64: b })
+            assert.strict.deepEqual(srcs(r.html), ['https://example.com/d.png', '//example.com/c.png', '#frag', '', '', data])
+        })
+
+        //規格: HTML註解內之<img>(單引號, 無引號, 多個)不登記, 不要求檔案存在
+        it('HTML註解內之<img>(單引號, 無引號, 同行多個)不登記不reject', async function() {
+            let r = await conv('cmt', '<!-- <img src=\'gone1.png\'><img src=gone2.png> -->\n\n<img src=pics/a.png>', { imgConvertToBase64: false }, putPics)
+            assert.strict.deepEqual(srcs(r.html), [path.join(r.fd, 'pics', 'a.png')])
+        })
+
+        //規格: 只處理<img>標籤; 修前其他標籤之src(如video)被當圖片登記而缺檔reject(base64模式則轉PNG失敗)
+        eachMode('非<img>標籤之src(video)不處理, 缺檔不reject', async (b) => {
+            let r = await conv(`vid-${b}`, '<video src="clip.mp4"></video>\n\n<img src=\'pics/a.png\'>', { imgConvertToBase64: b }, putPics)
+            assert.strict.deepEqual(attrsOf(r.html, 'src', 'video'), ['clip.mp4'])
+            assert.strict.deepEqual(srcs(r.html), await expOf(r.fd, ['pics/a.png'], b))
+        })
+
+        //規格: 程式碼區塊與行內程式碼內之文字不是圖片引用: 不登記(缺檔不reject), 輸出文字原樣, 無佔位符殘留; 修前雙引號者缺檔reject或殘留佔位符
+        eachMode('程式碼區塊與行內程式碼內之<img>文字不登記不改寫', async (b) => {
+            let r = await conv(`code-${b}`, '正文 `<img src=z.png>` 結尾\n\n```html\n<img src="x.png">\n<img src=\'y.png\'>\n```', { imgConvertToBase64: b })
+            assert.strict.deepEqual(srcs(r.html), [])
+            assert.strict.equal(r.html.includes('wmd2htmlimg'), false)
+            let { window } = new JSDOM(r.html)
+            let txt = Array.from(window.document.querySelectorAll('code')).map((el) => el.textContent).join('\n')
+            window.close()
+            for (let s of ['<img src=z.png>', '<img src="x.png">', '<img src=\'y.png\'>']) {
+                assert.strict.equal(txt.includes(s), true, s)
+            }
+        })
+
+        //規格: 表格(表頭與儲存格), 清單, 引用區塊, 連結, 註腳內之行內<img>(單引號, 無引號, 雙引號)皆登記並填入(註腳於輸出末尾)
+        eachMode('表格表頭與儲存格, 清單, 引用區塊, 連結, 註腳內之原始<img>', async (b) => {
+            let r = await conv(`ctx-${b}`, [
+                '| <img src="pics/c.png"> |',
+                '|---|',
+                '| <img src=\'pics/a.png\'> |',
+                '',
+                '- <img src=pics/b.png>',
+                '',
+                '> <img src="pics/c.png"> 引用',
+                '',
+                '[<img src=\'pics/a.png\'>](https://example.com)',
+                '',
+                '註腳[^1]',
+                '',
+                '[^1]: 註 <img src=pics/a.png>',
+            ].join('\n'), { imgConvertToBase64: b }, putPics)
+            assert.strict.deepEqual(srcs(r.html), await expOf(r.fd, ['pics/c.png', 'pics/a.png', 'pics/b.png', 'pics/c.png', 'pics/a.png', 'pics/a.png'], b))
+        })
+
+        //規格: 圖題與同行多個<img>並存時, 交叉引用取代為圖號且各圖皆填入(圖表編號與圖片引用協同)
+        it('圖題與同行多個單引號/無引號<img>並存: {圖名}取代為圖號, 兩圖皆填入', async function() {
+            let r = await conv('figref', '如{兩圖}所示。\n\n<div style="text-align:center;"><img src=\'pics/a.png\' /><img src=pics/b.png /><div>圖n 兩圖</div></div>', { imgConvertToBase64: false }, putPics)
+            assert.strict.deepEqual(srcs(r.html), [path.join(r.fd, 'pics', 'a.png'), path.join(r.fd, 'pics', 'b.png')])
+            assert.strict.equal(r.html.includes('如圖1所示'), true)
+            assert.strict.equal(r.html.includes('{兩圖}'), false)
         })
 
     })

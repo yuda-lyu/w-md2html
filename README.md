@@ -17,6 +17,15 @@ To view some examples for more understanding, visit examples:
 
 ## Upgrade Notes
 
+### Breaking changes after 1.1.12：原始 `<img>` 之 `src` 解析（引號形態、同行多個、處理範圍）
+
+**行為變更**（`WMd2html`；不保留舊行為，下游須連帶評估）。以下取代 after 1.1.11 與 Behavior change after 1.1.9 兩節末尾所列「同一行多個 `<img src>` 丟 `size(s)!==2`」「只處理雙引號 `src`」之已知限制。
+- **原始 `<img>` 之 `src` 值可為雙引號、單引號或無引號**，等號兩側可有空白，標籤名與屬性名不分大小寫，與雙引號寫法走同一流程（先登記，轉換完成後依 `imgConvertToBase64` 寫入絕對路徑或內嵌 base64，缺圖 reject 並列全部路徑）。過去只處理雙引號 `src="…"`，單引號與無引號之本機圖保持原值（路徑模式留相對路徑、base64 模式不內嵌）。無引號之值依 HTML 解析器規則至空白或 `>` 為止（`<img src=a.png/>` 之值為 `a.png/`，解析為路徑時尾端分隔符被去除，等同 `a.png`）；無引號之值若含 `=`、引號或 `<`（如 `a.png?x=1`），Markdown 不視為 HTML 標籤而以文字輸出，請加引號；`%XX` 與 HTML 實體不解碼（同過去）。
+- **同一行（同一段文字）可有任意多個 `<img>`**，各自登記，亦可與 md 語法圖 `![](…)` 混用於同一行；標籤之屬性可跨行。過去同一行含兩個以上 `src="` 會丟 `size(s)!==2`（`imgConvertToBase64` 兩種值皆然）。
+- **只處理 `<img>` 標籤之 `src` 屬性**：屬性名稱須完整相等，`data-src`、`alt` 等屬性值內之 `src="…"` 字樣、其他標籤（如 `<video src>`、`<source src>`）之 `src` 不處理，HTML 註解內之 `<img>` 亦不處理。過去只要一行含 `src="` 字樣即被當圖片：缺檔使整個轉換 reject（`<video src>` 指向之本機檔亦然）、`alt` 值內之 `src="…"` 字樣被改寫、`data-src` 與 `src` 同行即丟 `size(s)!==2`；本機媒體檔（`<video>`、`<audio>`）自此保持原值，不寫成絕對路徑亦不內嵌。
+- **程式碼區塊與行內程式碼內之 `<img …>` 文字不視為圖片引用**：不登記、缺檔不 reject、輸出之程式碼文字原樣。過去（以雙引號寫法為例）：行內程式碼內者缺檔時使整個轉換 reject，存在時文字被改寫為絕對路徑（`false`）或整段 base64（`true`）；經語法上色之程式碼區塊內者，內部佔位符 `wmd2htmlimgN` 殘留於輸出。
+- **影響**：只含雙引號且每行一個 `<img src="…">` 之既有文件，輸出逐字不變（`test/report.md` 於兩種 `imgConvertToBase64` 值，修前修後輸出逐字相同）。依賴「單引號或無引號 `src` 保持原值」「`<video src>` 被當圖片處理」者須改寫。**未處理（維持原值）**：`srcset`、`<picture><source>`、CSS `url()`、`<input type="image">`。
+
 ### Breaking changes after 1.1.11：本機圖片之引用（路徑模式、缺圖 reject、base64 總量上限）
 
 **破壞性變更**（`WMd2html`；不保留舊行為，下游須連帶修正）。

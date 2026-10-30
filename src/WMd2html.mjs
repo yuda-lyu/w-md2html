@@ -61,7 +61,7 @@ const IMG_BASE64_MAX_CHARS = 2 ** 27
  * @param {String} [opt.textAlignH6='left'] 輸入h6對齊方式，可使用'left'、'center'、'right'，預設'left'
  * @param {Number|String} [opt.imgWidthMax=null] 輸入圖片樣式給予最大寬度，可輸入數字500單位為px，或是字串例如'100%'，預設null
  * @param {String} [opt.htmlTemp=null] 輸入模板字串，其內須取代{title}與{html}，預設null
- * @param {Boolean} [opt.imgConvertToBase64=true] 輸入本機圖片是否自動轉Base64內嵌布林值，預設true。md語法圖與原始<img src="">行皆以md所在資料夾解析路徑(絕對路徑則照用)，具通訊協定(如https:、data:)之網址不處理。true時輸出為自足html，各圖重新編碼為PNG內嵌，圖片總量過大(base64合計超過上限)則reject。false時不讀取、不轉碼，圖片src改寫為本機絕對路徑(Windows為反斜線形式，Word可解析；正斜線與百分比編碼不可)，輸出html不可攜，僅供同機之後續處理(如轉Word)。兩種模式下，圖片檔不存在皆reject，訊息列出全部缺圖路徑
+ * @param {Boolean} [opt.imgConvertToBase64=true] 輸入本機圖片是否自動轉Base64內嵌布林值，預設true。md語法圖與原始<img>標籤之src皆以md所在資料夾解析路徑(絕對路徑則照用)，原始<img>之src值可為雙引號、單引號或無引號，同一行(同一段文字)可有任意多個，只處理<img>標籤之src屬性(data-src與其他標籤之src不處理)，程式碼區塊與行內程式碼內之文字不視為圖片引用；具通訊協定(如https:、data:)之網址不處理。true時輸出為自足html，各圖重新編碼為PNG內嵌，圖片總量過大(base64合計超過上限)則reject。false時不讀取、不轉碼，圖片src改寫為本機絕對路徑(Windows為反斜線形式，Word可解析；正斜線與百分比編碼不可)，輸出html不可攜，僅供同機之後續處理(如轉Word)。兩種模式下，圖片檔不存在皆reject，訊息列出全部缺圖路徑
  * @param {Function} [opt.funProcFpOut=null] 輸入處理輸出檔名函數，函數會傳入{fpOut,pretitle}，分別為原始輸出檔位置與提取Markdown內pretitle區文字，預設null
  * @returns {Promise} 回傳Promise，resolve回傳成功訊息，reject回傳錯誤訊息
  * @example
@@ -165,18 +165,28 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return pretitle
     }
 
-    //取屬性值, attrs為標籤名稱之後的屬性字串, 屬性值可含>與空白, 無此屬性回傳null, 屬性不帶值回傳空字串; 空白只認html之空白字元(不含U+00A0), 與html解析器一致
-    let getAttr = (attrs, name) => {
+    //以註解或標籤為單位由左而右掃描html字串之掃描式(取圖表名之getItemName與登記圖片引用之cvPicRef共用), 供new RegExp(reTag, 'g')使用:
+    //  註解整段為一個單位(未閉合者至字串結尾), 標籤名稱至空白,/,>為止(群組1), 其後屬性部分(群組2)可含引號包住之>與<, 故註解內或其他標籤屬性值內之<img字樣不會被當成標籤
+    let reTag = String.raw`<!--[\s\S]*?(?:-->|$)|<([A-Za-z][^ \t\n\f\r/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>`
+
+    //找屬性, attrs為標籤名稱之後的屬性字串, 回傳第一個名稱(不分大小寫, 須完整相等)為name者{value: 屬性值, index: 該屬性(含名稱, 等號與值)於attrs之起點, length: 其長度}, 無此屬性回傳null
+    //  屬性值可為雙引號, 單引號或無引號(至空白或>為止, 含/與=), 可含>與另一種引號; 屬性不帶值時value為空字串; 空白只認html之空白字元(不含U+00A0), 與html解析器一致
+    let findAttr = (attrs, name) => {
         let reAttr = /([^ \t\n\f\r"'<>/=]+)(?:[ \t\n\f\r]*=[ \t\n\f\r]*(?:"([^"]*)"|'([^']*)'|([^ \t\n\f\r>]+)))?/g
-        let r = null
         let m = reAttr.exec(attrs)
         while (m !== null) {
-            if (r === null && m[1].toLowerCase() === name) {
-                r = m[2] ?? m[3] ?? m[4] ?? ''
+            if (m[1].toLowerCase() === name) {
+                return { value: m[2] ?? m[3] ?? m[4] ?? '', index: m.index, length: m[0].length }
             }
             m = reAttr.exec(attrs)
         }
-        return r
+        return null
+    }
+
+    //取屬性值, 無此屬性回傳null, 屬性不帶值回傳空字串
+    let getAttr = (attrs, name) => {
+        let a = findAttr(attrs, name)
+        return a === null ? null : a.value
     }
 
     //取圖表名, 只取「圖n」「表n」所在之文字: 圖片與圖題寫在同一行時, 有src之<img>須先移除, 否則html2str會將其轉為「alt [src]」併入圖表名, 使圖表名對不上內文之{圖表名}
@@ -184,7 +194,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
     //  無src(含src為空)之<img>維持原狀(html2str僅輸出alt), 沒有移除任何圖片時該行與修正前完全相同; 有移除圖片時, 若轉為純文字後已不含「圖n」(原本只在被移除之img屬性或其他標籤之屬性內)則非圖題, 回傳null不登記, 避免以空名稱或他字覆寫真正之圖題
     let getItemName = async (v, type) => {
         let rm = false
-        let t = v.replace(/<!--[\s\S]*?(?:-->|$)|<([A-Za-z][^ \t\n\f\r/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g, (m, name, attrs) => {
+        let t = v.replace(new RegExp(reTag, 'g'), (m, name, attrs) => {
             if (name !== undefined && name.toLowerCase() === 'img' && getAttr(attrs, 'src')) {
                 rm = true
                 return '\u0001' //以記號標示被移除之圖片位置, 供下方判斷連結是否因此變空
@@ -279,7 +289,7 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return h
     }
 
-    //本機圖片引用: md語法圖(walkTokens)與原始<img src="">行(cvPicRef)皆只登記並暫以佔位符取代src, 待md2html完成後再依imgConvertToBase64一次寫入(fillImgs)
+    //本機圖片引用: md語法圖(image token)與原始<img>標籤(html token, cvPicRef)皆於walkTokens只登記並暫以佔位符取代src, 待md2html完成後再依imgConvertToBase64一次寫入(fillImgs)
     //  why 佔位符: ①DOMPurify會移除值為Windows絕對路徑(C:\...)之src(視為未知通訊協定), 絕對路徑只能於清洗之後寫入; ②圖片之data URL不經marked, DOMPurify與jsdom, 其堆積不隨圖片總量放大(清洗後堆積約為html字元數之35倍)
     //  路徑一律以md所在資料夾解析(絕對路徑照用), 同一檔共用一個佔位符; 空值, 具通訊協定(https:, data:, file:等), 協定相對(//)與錨點(#)者非本機圖, 維持原值不處理
     let phImg = '' //佔位符前綴, 讀入md後決定
@@ -297,25 +307,24 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         return `${phImg}${kpFpImg[fp]}`
     }
 
-    //原始<img src="">行(逐行處理, 一行須恰有一個src=")
-    let cvPicRef = (md) => {
-        let gsrc = (c) => {
-            let s = split(c, 'src="')
-            if (size(s) !== 2) {
-                throw new Error(`size(s)!==2`)
+    //原始<img>標籤之src: 於walkTokens對html token(區塊與行內)之text呼叫, 故程式碼區塊與行內程式碼(非html token)內之文字不處理
+    //  以getItemName同一掃描式(reTag)逐標籤處理, 一段文字可有任意多個<img>(不分行, 標籤屬性可跨行); 只處理<img>標籤(不分大小寫)之src屬性, 屬性名稱須完整相等(data-src, 他標籤之src皆不是, 註解內之<img>亦不處理)
+    //  src值可為雙引號, 單引號或無引號(依html解析器規則, 見findAttr), 同一標籤有多個src時只取第一個(與html解析器一致); 本機圖整個src屬性改寫為src="佔位符"(一律雙引號), 之後與md語法圖同一流程由fillImgs填入; 非本機圖, 空值與無src者原樣保留
+    let cvPicRef = (html) => {
+        return html.replace(new RegExp(reTag, 'g'), (m, name, attrs) => {
+            if (name === undefined || name.toLowerCase() !== 'img') {
+                return m
             }
-            let s1s = split(s[1], '"')
-            let ph = regImg(s1s[0])
+            let a = findAttr(attrs, 'src')
+            if (a === null) {
+                return m
+            }
+            let ph = regImg(a.value)
             if (ph === null) {
-                return c
+                return m
             }
-            s1s[0] = ph
-            return s[0] + 'src="' + join(s1s, '"')
-        }
-        let tt = map(split(md, '\n'), (v) => {
-            return v.indexOf('src="') >= 0 ? gsrc(v) : v
+            return `<${name}${attrs.slice(0, a.index)}src="${ph}"${attrs.slice(a.index + a.length)}>`
         })
-        return join(tt, '\n')
     }
 
     //輸出html之圖片src寫入: 先檢查各圖檔是否存在(缺圖一次列出全部), base64模式再檢查總量, 通過後才轉碼; 於md2html完成後呼叫, 此時html仍只含佔位符
@@ -533,16 +542,16 @@ async function WMd2html(fpIn, fpOut, opt = {}) {
         phImg += 'x'
     }
 
-    //cvPicRef
-    md = cvPicRef(md)
-
-    //walkTokens
+    //walkTokens, md語法圖(image token)與原始<img>(html token, 區塊與行內)皆於此登記
     let walkTokens = (token) => {
         if (token.type === 'image') {
             let ph = regImg(token.href)
             if (ph !== null) {
                 token.href = ph
             }
+        }
+        else if (token.type === 'html') {
+            token.text = cvPicRef(token.text)
         }
     }
 
