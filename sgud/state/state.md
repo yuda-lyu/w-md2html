@@ -30,5 +30,5 @@
 
 ## 下游與依賴
 
-- 下游:主系統(rddmanager)之 `genDocx_R00.01.mjs`、`_docs/M01.成果報告/*/src/genMd.mjs`(已先改多行寫法因應,修正後單行寫法亦可);w-md2docx;w-web-api。
+- 下游:主系統(使用端)之 `genDocx_R00.01.mjs`、`_docs/M01.成果報告/*/src/genMd.mjs`(已先改多行寫法因應,修正後單行寫法亦可);w-md2docx;w-web-api。
 - 自有依賴 wsemi(`html2str`、`replace` 等)與 w-image-proc(`base64`)由開發者統籌升版,本套件不補裝.

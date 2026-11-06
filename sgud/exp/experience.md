@@ -49,7 +49,7 @@
 - w-md2docx 所附樣板 `src/templates/temp_tpc.docx` 之 heading 1~9 樣式皆帶 keepNext、皆不帶 keepLines(2026-10-10 實測);曾憑印象以為兩者皆有,寫進文件前須實測.
 - 本套件無須配合修改:分頁屬性屬 docx 層,由 w-md2docx 以純 XML 處理即可,不在 HTML 層重複實作圖表名之辨識規則.
 
-## 2026-10-11 清洗移除使用者內容中之 `<style>`(下游 rddmanager 之 `建議w-md2html修正.md`)
+## 2026-10-11 清洗移除使用者內容中之 `<style>`(下游使用端之 `建議w-md2html修正.md`)
 
 - DOMPurify 預設允許 `<style>` 且不檢查其中之 CSS;md2html 輸出外包 `<div class="md">`,故即使 `<style>` 在 markdown 開頭也不會被解析器移到 head 而保留,置入頁面後作用於整頁.`FORBID_TAGS: ['style']` 移除元素後,其內容依預設 `FORBID_CONTENTS`(含 style,`purify.es.mjs` 之 `DEFAULT_FORBID_CONTENTS`)一併捨棄,不會外漏為文字.
 - 外層 `contain:layout` 只讓區塊成為 fixed 子元素之定位基準,不裁切:style 屬性之 `position:fixed` 遮罩仍會蓋住區塊右方與下方之其他區塊;`contain: layout paint` 才裁切.w-web-api `MdPanel.vue` 以 `.md >>> .md { contain: none !important }` 解除外層 containment,該處遮罩可蓋滿視窗(見 sgud/rule/rulebook.md R-SANITIZE-01).
@@ -58,7 +58,7 @@
 - 修正前後之瀏覽器對照:以專案根之範例頁(載入尚未重建之 `dist`)為修正前、以 `./tmp/build-check` 新打包者為修正後,同一腳本各跑一次.
 - 以 sed 對 CRLF 原始檔產生複本會轉為 LF,`diff` 顯示全檔不同;比對語意差異用 `diff --strip-trailing-cr`.
 
-## 2026-10-24~25 圖題與 `<img>` 同行時內文 `{圖名}` 不取代(下游 rddmanager 之 `建議w-md2html修正.md`)
+## 2026-10-24~25 圖題與 `<img>` 同行時內文 `{圖名}` 不取代(下游使用端之 `建議w-md2html修正.md`)
 
 - 成因:`cvItemNum` 逐行以 wsemi `html2str`(底層 html-to-text)取整行純文字當圖表名;html-to-text 把 `<img>` 轉為「alt [src]」文字(`formatImage`:無 src 只輸出 alt),單行寫法的圖名因而夾帶 `[pics/a.png]`.重現不必起服務:`WMd2html` 吃 md 檔路徑,一份含單行/多行圖區塊與 `{圖名}` 內文的 md,`imgConvertToBase64:false` 仍會跑 `cvPicB64`(逐行 `src="` 就讀檔,不存在即丟錯),故夾具須備真圖檔(1x1 png 即可);要避開讀檔就用 `src=x`(不帶雙引號).
 - 修法擁有者:`html2str` 是通用函式、其對 `<img>` 之行為屬設計,不改 wsemi;「圖題文字」之語意屬本套件,故在 `WMd2html` 取名前先移除**有 src 且非空**之 `<img>`.**守則:修 bug 的範圍限定在「修前必定出錯」那一類輸入,其餘路徑要能證明與修前逐字相同**.先前試過的每一項「順手清理」都被外審抓到會改變修前已可解析之輸出:`html2str` 後 `slice` 到「圖n」位置(丟掉 `補充：圖n 名` 之前綴、多區塊名 `{前文⏎ 甲}`)、一併移除 svg(圖名在 svg 內)、移除無 src 或 src 為空之 img(`<img alt="圖n 甲" src=''>` 之 alt 本是圖題文字)、一律清除空連結(原本就空之連結要保留其 href 文字).證明「逐字相同」有兩招:程式上讓沒有移除任何 img 的行走同一條路徑(`rm` 旗標);另以差異對照腳本把修前複本與現行 src 對同一份 md 轉換、整份輸出 html 逐字比對(`diff-old-new.mjs`,21 種寫法).
