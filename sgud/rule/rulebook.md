@@ -23,6 +23,36 @@
 - 裁決紀錄:2026-10-07 不升 katex 0.19(宣告 `^0.19.0` 會 npm ERESOLVE),不以 `--legacy-peer-deps` 或 overrides 繞過,待 marked-katex-extension 放寬 peer 後一併升;0.18.11 被官方標 deprecated,不宣告 `^0.18.11`(0.19.0 程式與 0.18.11 相同,停在 0.18.10 無功能損失).
 - 驗證指令:`npm view marked-katex-extension@<釘選版> peerDependencies`;於專案複本 `npm install --package-lock-only` 無 ERESOLVE;`npm view katex@<解析版> deprecated` 應為空.
 - 對應紀錄:根目錄 `marked-katex-extension與katex版本限制.txt`.
+- 複評(2026-11-09,katex 已有 0.19.1、無 deprecated):結論仍不升,待裁示.①marked-katex-extension 最新仍為 5.1.13,peer 仍 `katex >=0.16 <0.19`;②於複本改宣告 `^0.19.1`:無鎖檔解析 ERESOLVE(離開碼 1);有鎖檔第一次 `npm install` 僅警告 `ERESOLVE overriding peer dependency` 而成功並寫入違規鎖檔,其後任何 `npm install` 即 ERESOLVE(離開碼 1);③消費端安裝以 `npm pack` 之探測包實測:npm 不報錯,但把 katex 0.19.1 巢狀置於本套件之下、頂層提升 katex 0.18.10 供 marked-katex-extension 使用,即渲染(0.18.10)與 `katex.version` 組 CSS 網址(0.19.1)來自兩份 katex,正是 R-CSS-01 要避免之版本分裂;④執行期相容性無虞(0.19.1 隔離複本跑既有測試:僅 `reportTrue.html` 之 CSS 版號一行不同,正規化版號後逐字相同;新增之 R-KATEX-01 三條皆綠).能解之路徑:待 marked-katex-extension 放寬 peer;或改自寫 marked 擴充取代之(範圍擴大,須裁示);`overrides` 只對本套件自身之安裝有效,對消費端無效,不採.
+
+## R-KATEX-01 公式含中文或字型外符號時須仍渲染為公式,不因 KaTeX strict 丟錯或轉為錯誤呈現
+
+- 規則:`src/md2html.mjs` 傳給 marked-katex-extension 之選項為 `throwOnError:false`、`nonStandard:true`,**不明設 `strict`**(依 KaTeX 預設:0.19.1 `src/Settings.ts` 之 `strict` 無 `default`,依該檔規則「未指定時由首個允許型別決定」=列舉首值 `'warn'`;實測行為同 `'warn'`).含中文等非數學字元(`unicodeTextInMathMode`)與不在 KaTeX 字型內之符號(`unknownSymbol`、`symbolNotInFont`,如 emoji、☃、阿拉伯字母)之公式須渲染為公式(`.katex`,字元排入顯示層 `.katex-html`),僅 KaTeX 以 `console.warn` 提示,不丟錯、不轉為 `.katex-error`;只有 TeX 語法錯誤(ParseError,如 `\frac{1`)才以 `.katex-error` 紅字呈現原始碼.若日後要明設 `strict`:不得為 `'error'`,亦不得為對上列錯誤碼回 `'error'`/`true` 之函式;明設須同時於 README 說明.
+- why:KaTeX 0.19.0 起缺字元度量改經 `strict` 回報(錯誤碼 `symbolNotInFont`),`strict` 為 `'error'` 時丟 ParseError(0.18.10 該錯誤碼不經 `strict`,實測);本套件 `throwOnError:false` 會把丟錯轉成 `.katex-error`,中文公式將整個變紅字原文.
+- 單一擁有者:`src/md2html.mjs` 之 `markedKatex({...})` 選項;marked-katex-extension(`lib/index.esm.js`)以 `katex.renderToString(text, { ...options, displayMode })` 原樣透傳選項,不自設 `strict`(2026-11-09 讀碼).
+- 盤點指令:`git grep -n "strict" -- src` 應無結果(離開碼 1;2026-11-09 實測無符合);`git grep -n "markedKatex" -- src` 應只有 `src/md2html.mjs` 之 import 與 `marked.use(markedKatex({` 兩處.
+- 站點全集與判準(2026-11-09):
+
+| 站點 | 判準 |
+|---|---|
+| `src/md2html.mjs` `markedKatex({ throwOnError:false, nonStandard:true })` | 已套(刻意不明設 `strict`) |
+| `src/WMd2html.mjs` | 經 md2html,不另呼叫 KaTeX;其 `getUnresolvedRefs` 排除 `.katex`/`.katex-error`/`math`(見 R-FIGREF-01) |
+
+- 實測矩陣(2026-11-09,`katex.renderToString(tex, { throwOnError:false, strict })`,katex 0.18.10 與 0.19.1 各一;`.katex-error` 欄為輸出含 `katex-error`):
+
+| 輸入 | `strict` 未設 | `'warn'` | `'ignore'` | `'error'` |
+|---|---|---|---|---|
+| `面積 = x^2`(math 內中文) | 公式,warn 2 則 | 同未設 | 公式,0 則 | `.katex-error` |
+| `\text{面積} = x^2` | 公式,0 則 | 同未設 | 同未設 | 公式 |
+| `x = 😀`、`☃`、`ب` | 公式,warn 2 則(`unknownSymbol`+`symbolNotInFont`) | 同未設 | 公式;0.19.1 為 0 則(0.18.10 仍 1 則 `No character metrics`) | `.katex-error` |
+| `\frac{1`(ParseError) | `.katex-error` | 同未設 | 同未設 | 同未設 |
+| U+E000(私用區) | `.katex-error` | 同未設 | 同未設 | 同未設 |
+
+  另:`strict` 為回傳 undefined 之函式時,0.19.1 視同未設(警告;與 0.19.0 發布說明「回傳 undefined/null 改為警告」一致),0.18.10 視同 `'ignore'`(中文 0 則警告);兩版皆不丟錯、不轉 `.katex-error`.
+
+- 測試:`test/unit-md2html-deps.test.mjs` 之「含中文字元之公式」、「含不在字型內之符號」、「語法錯誤之公式以 .katex-error 呈現原始碼」3 條(語意斷言:`.katex`/`.katex-display` 在、無 `katex-error`、字元在顯示層、前後文不受影響;警告之有無與文字依版本而異,不斷言).指令:`npx mocha --no-parallel "test/unit-md2html-deps.test.mjs" --timeout 180000`.
+- 變異證據(2026-11-09,於 `./tmp` 之 src 複本改 `markedKatex` 選項,0.18.10 與 0.19.1 各跑):`strict:'error'` 兩版皆 3 條轉紅(23 綠);`strict:(code)=>code==='symbolNotInFont'?'error':'ignore'` 於 0.19.1 僅「字型外符號」1 條轉紅(25 綠)、於 0.18.10 全綠(26)——證實 0.19.0 之行為變更;無變異對照組兩版皆 26 全綠.
+- 已知限制:未設 `strict` 時,每個中文字元(math 模式)或字型外符號於 Node 端各印一則 `console.warn`(KaTeX 自身,非錯誤);要靜音須明設 `strict:'ignore'`(0.19.1 全靜音,0.18.10 仍有缺度量一則)並於 README 說明,尚未做,待裁示.
 
 ## R-BUILD-01 src 直接 import 之第三方 runtime 依賴須列為 Node 版 UMD 之 external
 
@@ -196,9 +226,9 @@
 | `test/genNumForPicAndTab.test.mjs` | 圖表自動編號與交叉引用 | 4 |
 | `test/unit-genNumRefs.test.mjs` | 圖表名取法(單行/多行)與未解析引用警告(R-FIGREF-01) | 17 |
 | `test/WMd2html.test.mjs` | report.md 全文逐字比對 `test/reportTrue.html`(現狀指紋;4.1.3、4.1.4 為表格標記之範例,與 `examples/ex-md2html.html` 同步,R-EXAMPLE-01) | 1 |
-| `test/unit-md2html-deps.test.mjs` | 依賴契約:KaTeX(CSS 版本、行內、區塊、nonStandard、throwOnError)、highlight(已知/未知/未指定語言)、footnote 屬性、marked renderer 與 async walkTokens、DOMPurify(on*、script/iframe、javascript:、`<style>` 移除與其邊界,見 R-SANITIZE-01)、WMd2html(CSS、`<style>` 移除、Footnotes 標題隱藏、圖片轉 base64) | 23 |
+| `test/unit-md2html-deps.test.mjs` | 依賴契約:KaTeX(CSS 版本、行內、區塊、nonStandard、throwOnError、含中文與字型外符號之公式不因 strict 變錯誤呈現,見 R-KATEX-01)、highlight(已知/未知/未指定語言)、footnote 屬性、marked renderer 與 async walkTokens、DOMPurify(on*、script/iframe、javascript:、`<style>` 移除與其邊界,見 R-SANITIZE-01)、WMd2html(CSS、`<style>` 移除、Footnotes 標題隱藏、圖片轉 base64) | 26 |
 
-- 指令:`npm test`(2026-11-09 為 138 passing、1 pending,其中 `md2html.test.mjs` 48 條[13+35];2026-10-31 為 103 passing、1 pending,其中 `unit-imgPath` 45 條、其餘各檔合計 58 條[13+4+17+1+23];2026-10-29 為 76 passing、1 pending[`unit-imgPath` 之 `"` 路徑,Windows 無法建檔],加 `unit-imgPath` 21 條;2026-10-25 為 58 passing;2026-10-11 為 41,加 `unit-genNumRefs` 17 條).`test/report.md` 第 140 行標題含正文 `{n}`,`test/WMd2html.test.mjs` 轉換時會多印一行警告(屬實:該 `{n}` 對不上任何圖表名),不影響逐字比對.
+- 指令:`npm test`(2026-11-09 之 R-KATEX-01 新增 3 條後為 141 passing、1 pending[見 state.md];同日稍早為 138 passing、1 pending,其中 `md2html.test.mjs` 48 條[13+35];2026-10-31 為 103 passing、1 pending,其中 `unit-imgPath` 45 條、其餘各檔合計 58 條[13+4+17+1+23];2026-10-29 為 76 passing、1 pending[`unit-imgPath` 之 `"` 路徑,Windows 無法建檔],加 `unit-imgPath` 21 條;2026-10-25 為 58 passing;2026-10-11 為 41,加 `unit-genNumRefs` 17 條).`test/report.md` 第 140 行標題含正文 `{n}`,`test/WMd2html.test.mjs` 轉換時會多印一行警告(屬實:該 `{n}` 對不上任何圖表名),不影響逐字比對.
 - 基準檔重產:`test/reportTrue.html` 僅在依賴升版造成之預期差異時重產;先列預期差異,以腳本逐行驗證差異僅限預期項目,經使用者授權才覆蓋.2026-10-07 重產,差異 3 行(KaTeX CSS 版本、base/strut/sizing 改名).2026-11-09 重產(主控授權,Gitea #112、#113):分兩階段驗證——① report.md 不動、僅 styleDef 增列行內 code 規則(R-CODEFONT-01),輸出差異為單一處純新增 36 行(0 刪除);② report.md 新增 4.1.3、4.1.4 兩節範例後,與修前之總差異為兩處純新增(styleDef 36 行、新增兩節 65 行,0 刪除),其餘 459 行逐字不變.重產指令:以 `test/WMd2html.test.mjs` 相同選項(`imgWidthMax:'500px'`)對 `test/report.md` 呼叫 `WMd2html` 寫至暫存路徑,與現行 `reportTrue.html` 以 `git diff --no-index -U0` 比對,確認僅新增後覆蓋.
 
 ## 已知限制

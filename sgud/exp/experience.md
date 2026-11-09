@@ -2,6 +2,13 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.
 
+## 2026-11-09 katex 0.19.1 複評(strict 與 peer)
+
+- 升版前以隔離複本看執行期相容,不動本套件:`./tmp/<名>/` 放 `src`、`test` 複本與 `node_modules/katex`(新版)、`node_modules/marked-katex-extension`(複本),其餘依賴由 `./tmp` 之上層 `node_modules` 解析;mocha 直接指向複本之 test.注意擴充套件須一併複製,否則它仍 import 到本套件之舊 katex,等於沒測.
+- 同一份 `package.json` 之三種解析結果不同,判斷「能否升」須三種都看:①有鎖檔之 `npm install` 對 peer 衝突只警告(`ERESOLVE overriding peer dependency`)並寫入違規鎖檔;②之後再 `npm install` 或無鎖檔即 ERESOLVE;③消費端(`npm pack` 探測包再 `npm install --package-lock-only`)不報錯,但把新版 katex 巢狀於本套件下、頂層提升舊版給擴充套件,造成版本分裂.
+- 把套件選項當契約者,以 `strict` 變異驗證測試之靈敏度:`'error'` 令中文公式與字型外符號之公式轉 `.katex-error`;只對 `symbolNotInFont` 回 `'error'` 之函式在 0.19.1 才生效(0.18.10 該錯誤碼不經 strict),可用來證明版本間行為差異.
+- 中文公式於 Node 端會印 KaTeX 之 `console.warn`(math 內中文、字型外符號);測試以暫時替換 `console.warn` 吞掉(`finally` 還原),不斷言警告文字(依版本而異).
+
 ## 2026-10-07 依賴升版(dompurify、highlight.js、jsdom、katex、marked、marked-katex-extension、wsemi)
 
 ### 升版判斷

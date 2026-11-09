@@ -19,6 +19,23 @@ let conv = async (md, opt = {}) => {
     return r.html
 }
 
+//同conv, 但轉換期間吞掉katex以console.warn輸出之strict警告(避免污染測試輸出; 警告之有無與文字依katex版本而異, 不屬契約, 不斷言), 結束後還原console.warn
+let convQuiet = async (md, opt = {}) => {
+    let warnOri = console.warn
+    console.warn = () => {}
+    try {
+        return await conv(md, opt)
+    }
+    finally {
+        console.warn = warnOri
+    }
+}
+
+//取出KaTeX之顯示層(.katex-html)以後之html, 驗字元確實排進顯示層而非只存在於MathML內之原文
+let katexHtmlPart = (out) => {
+    return out.split('class="katex-html"')[1] || ''
+}
+
 
 describe('md2html 依賴契約(升版回歸)', function() {
 
@@ -65,6 +82,42 @@ describe('md2html 依賴契約(升版回歸)', function() {
     it('KaTeX: throwOnError:false, 錯誤 TeX 不拋例外並以原始碼呈現', async function() {
         let out = await conv('$\\frac{1$')
         assert.strict.equal(out.includes('\\frac{1'), true)
+    })
+
+    //規格: 同上, 且md2html.mjs未明設strict, 依KaTeX預設('warn'): math內含中文等非數學字元屬非LaTeX相容輸入, 僅console.warn,
+    //  不丟錯且仍以公式呈現(中文排入顯示層); 若strict變為'error', throwOnError:false會使其變成.katex-error之紅字原文, 本案即轉紅
+    it('KaTeX: 含中文字元之公式(行內math模式、區塊\\text)正常渲染, 不丟錯, 不轉為 .katex-error', async function() {
+        let out = await convQuiet('面積 $面積 = x^2$ 之式\n\n$$\n\\text{單位：公尺} = x^2\n$$')
+        assert.strict.equal(out.includes('class="katex"'), true) //以公式呈現
+        assert.strict.equal(out.includes('class="katex-display"'), true) //區塊公式仍為顯示模式
+        assert.strict.equal(out.includes('katex-error'), false) //不是出錯呈現
+        assert.strict.equal(out.includes('$面積'), false) //無未轉換之原文殘留
+        let html = katexHtmlPart(out)
+        assert.strict.equal(html.includes('面積'), true) //中文排入顯示層
+        assert.strict.equal(html.includes('單位：公尺'), true)
+    })
+
+    //規格: 同上; KaTeX 0.19.0 起缺字元度量改經strict回報(symbolNotInFont), 'error'時丟錯; 本案之符號(emoji、☃)不在KaTeX字型內,
+    //  預設('warn')下仍須渲染, 不丟錯, 不轉為.katex-error, 符號保留於顯示層
+    it('KaTeX: 含不在字型內之符號(emoji、☃)之公式正常渲染, 不丟錯, 不轉為 .katex-error', async function() {
+        let out = await convQuiet('甲 $x = 😀$ 乙 $☃$ 丙')
+        assert.strict.equal(out.split('class="katex"').length - 1, 2) //兩個公式皆以公式呈現
+        assert.strict.equal(out.includes('katex-error'), false)
+        let html = katexHtmlPart(out)
+        assert.strict.equal(html.includes('😀'), true)
+        assert.strict.equal(html.includes('☃'), true)
+        assert.strict.equal(out.includes('甲'), true) //前後文不受影響
+        assert.strict.equal(out.includes('丙'), true)
+    })
+
+    //規格: 同上, throwOnError:false「不要遇錯就丟例外」: 真正之TeX語法錯誤(ParseError)才以.katex-error呈現原始碼,
+    //  與上列strict警告類輸入(中文、字型外符號)分界; 同文件內錯誤式不影響其餘公式
+    it('KaTeX: 語法錯誤之公式以 .katex-error 呈現原始碼, 同文件之中文公式不受影響', async function() {
+        let out = await convQuiet('$\\frac{1$ 與 $面積$')
+        assert.strict.equal(out.split('class="katex-error"').length - 1, 1) //只有語法錯誤者為錯誤呈現
+        assert.strict.equal(/<span class="katex-error" title="ParseError:[^"]*"[^>]*>\\frac\{1<\/span>/.test(out), true) //原始碼, 紅字
+        assert.strict.equal(out.split('class="katex"').length - 1, 1) //中文公式正常
+        assert.strict.equal(katexHtmlPart(out).includes('面積'), true)
     })
 
     //規格: 擴充highlight(md2html.mjs), langPrefix 'hljs language-', 已知語言以 highlight.js 上色
