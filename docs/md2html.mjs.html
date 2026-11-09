@@ -66,10 +66,206 @@ import { markedHighlight } from 'marked-highlight'
 import DOMPurify from 'dompurify'
 
 
+//表格標記(div[data-for="tab"])之輔助函數, 皆為內部函數(R-SYNTAX-01、R-TABLE-01)
+
+//addStyle, 於node之style屬性末尾附加style字串, 前值未以;結尾則先補;
+let addStyle = (node, add) => {
+    if (add === '') {
+        return
+    }
+    let prev = node.getAttribute('style') || ''
+    if (prev !== '' &amp;&amp; !/;\s*$/.test(prev)) {
+        prev += ';'
+    }
+    node.setAttribute('style', prev + add)
+}
+
+//getColMap, 取得表格各cell之邏輯欄索引(cell為key, 值為其起始欄, 0起算), 計入上方rowspan與左方colspan所佔之格
+//  rowspan不跨區段(thead/tbody/tfoot), 換區段時重置佔用表; rowspan=0為至區段末列; 跨度取DOM之rowSpan/colSpan(已限縮於合法範圍), 再限縮於區段列數
+//  hasSpan為表內是否有實際跨列或跨欄之cell
+let getColMap = (tab) => {
+    let kpCol = new Map()
+    let hasSpan = false
+    let occ = [] //occ[列][欄]為該格是否已被佔用
+    let r = 0 //列於區段內之序
+    let secPrev = null
+    each(tab.rows, (tr) => {
+        let sec = tr.parentNode
+        if (sec !== secPrev) {
+            secPrev = sec
+            occ = []
+            r = 0
+        }
+        let nLeft = sec.rows.length - r //含本列, 區段內剩餘列數
+        occ[r] = occ[r] || []
+        let c = 0
+        each(tr.cells, (cell) => {
+            while (occ[r][c]) {
+                c++
+            }
+            kpCol.set(cell, c)
+            let rs = cell.rowSpan === 0 ? nLeft : Math.min(Math.max(cell.rowSpan, 1), nLeft)
+            let cs = Math.max(cell.colSpan, 1)
+            if (rs > 1 || cs > 1) {
+                hasSpan = true
+            }
+            for (let i = 0; i &lt; rs; i++) {
+                occ[r + i] = occ[r + i] || []
+                for (let j = 0; j &lt; cs; j++) {
+                    occ[r + i][c + j] = true //含本列, 下一格由上方while跳過已佔用者
+                }
+            }
+        })
+        r++
+    })
+    return { kpCol, hasSpan }
+}
+
+//parseCols, 解析欄索引清單(0起算, 逗號分隔, 各項去頭尾空白後須為非負整數), 依出現順序去重, 無效之項略過
+let parseCols = (t) => {
+    let cols = []
+    each(t.split(','), (s) => {
+        s = s.trim()
+        if (!/^\d+$/.test(s)) {
+            return
+        }
+        let n = parseInt(s, 10)
+        if (Number.isSafeInteger(n) &amp;&amp; cols.indexOf(n) &lt; 0) {
+            cols.push(n)
+        }
+    })
+    return cols
+}
+
+//pickProps, 自style字串取指定屬性(依keys之順序輸出, 同名取最後者, 與CSS後宣告優先一致), 回傳'k:v;k:v;'
+let pickProps = (st, keys) => {
+    let kp = {}
+    each(st.split(';'), (s) => {
+        let i = s.indexOf(':')
+        if (i &lt; 0) {
+            return
+        }
+        let k = s.slice(0, i).trim().toLowerCase()
+        if (keys.indexOf(k) >= 0) {
+            kp[k] = s.slice(i + 1).trim()
+        }
+    })
+    let t = ''
+    each(keys, (k) => {
+        if (kp[k] !== undefined) {
+            t += `${k}:${kp[k]};`
+        }
+    })
+    return t
+}
+
+//cellKey, cell之內容鍵(innerHTML去頭尾空白)
+let cellKey = (cell) => {
+    return cell.innerHTML.trim()
+}
+
+//canMerge, cell是否可參與合併: 存在, 無既有rowspan/colspan, 有內容(空白格不視為相同而合併)
+let canMerge = (cell) => {
+    return cell !== null &amp;&amp; cell.rowSpan === 1 &amp;&amp; cell.colSpan === 1 &amp;&amp; cellKey(cell) !== ''
+}
+
+//sameCell, 兩cell是否相同而可合併: 皆可參與合併, 同為th或同為td, 內容相同
+let sameCell = (a, b) => {
+    return canMerge(a) &amp;&amp; canMerge(b) &amp;&amp; a.tagName === b.tagName &amp;&amp; cellKey(a) === cellKey(b)
+}
+
+//mergeCellsH, 左右合併(data-merge-h): 同一列內指定欄之間邏輯欄相鄰且相同之cell合併為一格(colspan), 刪除右側之格, 保留最左格之內容與樣式
+//  適用thead/tbody/tfoot之各列; 相鄰以邏輯欄連續判定, 被上方rowspan佔住之欄不算相鄰
+let mergeCellsH = (tab, kpCol, cols) => {
+    each(tab.rows, (tr) => {
+        let cells = Array.from(tr.cells).filter((cell) => cols.indexOf(kpCol.get(cell)) >= 0 &amp;&amp; canMerge(cell))
+        let s = 0
+        for (let i = 1; i &lt;= cells.length; i++) {
+            let same = i &lt; cells.length &amp;&amp; kpCol.get(cells[i]) === kpCol.get(cells[i - 1]) + 1 &amp;&amp; sameCell(cells[s], cells[i])
+            if (!same) {
+                if (i - 1 > s) {
+                    cells[s].setAttribute('colspan', String(i - s))
+                    for (let k = s + 1; k &lt; i; k++) {
+                        cells[k].remove()
+                    }
+                }
+                s = i
+            }
+        }
+    })
+}
+
+//mergeCellsV, 上下合併(data-merge-v): 各tbody內, 指定欄上下相鄰且相同之cell合併為一格(rowspan), 刪除下方之格
+//  cols之順序為階層: 後列之欄只在前列各欄之同一合併區塊內才合併; 先左右後上下, 故已左右合併(colspan)之格不參與
+//  keep為true: 第一個合併欄之各區塊不跨頁, 區塊內各列加page-break-inside:avoid(Word之cantSplit), 非末列各格內容外包page-break-after:avoid之div(Word之keepNext)
+let mergeCellsV = (tab, kpCol, cols, keep, doc) => {
+    each(tab.tBodies, (tb) => {
+        let rows = Array.from(tb.rows)
+        let cellAt = (row, c) => {
+            let hit = null
+            each(row.cells, (v) => {
+                if (kpCol.get(v) === c) {
+                    hit = v
+                }
+            })
+            return hit
+        }
+        let keys = rows.map(() => '') //各列所屬之上層區塊鍵
+        let blocksTop = null
+        each(cols, (c) => {
+            let keysNew = rows.map(() => '')
+            let blocks = []
+            let s = 0
+            for (let i = 1; i &lt;= rows.length; i++) {
+                let same = i &lt; rows.length &amp;&amp; keys[i] === keys[s] &amp;&amp; sameCell(cellAt(rows[s], c), cellAt(rows[i], c))
+                if (!same) {
+
+                    //區塊[s, i-1]
+                    blocks.push([s, i - 1])
+                    for (let k = s; k &lt; i; k++) {
+                        keysNew[k] = `${keys[s]}|${s}`
+                    }
+                    if (i - 1 > s) {
+                        cellAt(rows[s], c).setAttribute('rowspan', String(i - s))
+                        for (let k = s + 1; k &lt; i; k++) {
+                            cellAt(rows[k], c).remove()
+                        }
+                    }
+                    s = i
+                }
+            }
+            keys = keysNew
+            if (blocksTop === null) {
+                blocksTop = blocks
+            }
+        })
+        if (keep &amp;&amp; blocksTop) {
+            each(blocksTop, ([s, e]) => {
+                for (let i = s; i &lt;= e; i++) {
+                    addStyle(rows[i], 'page-break-inside:avoid;')
+                    if (i &lt; e) {
+                        each(rows[i].cells, (cell) => {
+                            let wrap = doc.createElement('div')
+                            wrap.setAttribute('style', 'page-break-after:avoid;')
+                            while (cell.firstChild) {
+                                wrap.appendChild(cell.firstChild)
+                            }
+                            cell.appendChild(wrap)
+                        })
+                    }
+                }
+            })
+        }
+    })
+}
+
+
 /**
  * Markdown轉Html
  *
  * 輸出之html經DOMPurify清洗，並移除內容中之style元素(置入頁面後會作用於整頁)；mergeStyle為true時套件自身之樣式於清洗之後加入，不受影響
+ *
+ * 表格標記：於表格前以空div(data-for="tab")之屬性指定表格樣式與合併，data-style-th/data-style-td/data-style-th-{n}/data-style-td-{n}/data-style-code為樣式，data-merge-h/data-merge-v/data-merge-keep為合併儲存格(欄索引0起算)，詳見README之Table Markup
  *
  * @param {String} md 輸入Markdown字串
  * @param {Object} [opt={}] 輸入設定物件，預設{}
@@ -478,6 +674,42 @@ async function md2html(md, opt = {}) {
     font-family: Consolas, "Courier New", monospace;
 }
 
+/* 行內code明訂為所在元素之字級(Word匯入html時code不繼承父層字級, font-size:inherit亦無效, 會沿用文件預設字級而與周圍文字不一) */
+/* 後宣告優先: li、table先於p, 使清單項目與儲存格內之p內code隨p; 區塊程式碼(pre code)於li、table內維持fontSizeCode */
+.md li code {
+    font-size: {fontSizeDef};
+}
+.md table code {
+    font-size: {fontSizeTab};
+}
+.md p code {
+    font-size: {fontSizeP};
+}
+.md h1 code {
+    font-size: {fontSizeH1};
+}
+.md h2 code {
+    font-size: {fontSizeH2};
+}
+.md h3 code {
+    font-size: {fontSizeH3};
+}
+.md h4 code {
+    font-size: {fontSizeH4};
+}
+.md h5 code {
+    font-size: {fontSizeH5};
+}
+.md h6 code {
+    font-size: {fontSizeH6};
+}
+.md li pre code {
+    font-size: {fontSizeCode};
+}
+.md table pre code {
+    font-size: {fontSizeCode};
+}
+
 .md a {
     color: #0066cc;
     cursor: pointer;
@@ -569,28 +801,27 @@ async function md2html(md, opt = {}) {
         }
     })
 
-    //data-for="tab": 表格字型大小標記, 空div之data-style-th/data-style-td分別為th/td之style, 套用至往下第一張table之th/td再移除此標記
+    //data-for="tab": 表格標記, 空div之屬性套用至往下第一張table再移除此標記(R-SYNTAX-01、R-TABLE-01)
+    //  data-style-th/data-style-td: 分別為th/td之style; data-style-th-{n}/data-style-td-{n}: 逐欄之style; data-style-code: 表內全部行內code之style
+    //  data-merge-h/data-merge-v: 左右/上下合併之欄索引; data-merge-keep: 上下合併之區塊不跨頁
+    //  處理順序: 全域樣式 → 逐欄樣式 → code繼承 → 左右合併 → 上下合併 → 不跨頁(逐欄樣式先於合併, 合併格保留其欄之樣式; 左右合併後之格不再參與上下合併, 故分類列會切斷上下合併)
     //  why data-*: 標記(data-for)與樣式(data-style-th/td)皆用data-*承載, DOMPurify預設保留; 空div於md預覽不顯示且處理後移除, 與data-for="br"同慣例
     //  why inline於th/td元素: 對應w-html2docx(Word匯入)實測生效寫法, 直接置於th/td元素上(非cell內span)可避免殘留多餘run
+    //  無效之屬性值(非欄索引之項、非'true'之data-merge-keep)視為未給, 不拋錯且不影響其餘處理
     //  須先於tableHorizontalAlignmentCenter外包置中之前執行, 否則table被包入div後不再為此標記div之兄弟節點抓不到
     each(box.querySelectorAll('div[data-for="tab"]'), (el) => {
         let styleTh = el.getAttribute('data-style-th') || ''
         let styleTd = el.getAttribute('data-style-td') || ''
+        let styleCode = el.getAttribute('data-style-code') || ''
+        let colsH = parseCols(el.getAttribute('data-merge-h') || '')
+        let colsV = parseCols(el.getAttribute('data-merge-v') || '')
+        let mergeKeep = (el.getAttribute('data-merge-keep') || '').trim() === 'true'
         let tab = el.nextElementSibling
         while (tab &amp;&amp; tab.tagName !== 'TABLE') {
             tab = tab.nextElementSibling
         }
         if (tab) {
-            let addStyle = (cell, add) => {
-                if (add === '') {
-                    return
-                }
-                let prev = cell.getAttribute('style') || ''
-                if (prev !== '' &amp;&amp; !/;\s*$/.test(prev)) {
-                    prev += ';'
-                }
-                cell.setAttribute('style', prev + add)
-            }
+            let { kpCol, hasSpan } = getColMap(tab)
             if (styleTh !== '') {
                 each(tab.querySelectorAll('th'), (th) => {
                     addStyle(th, styleTh)
@@ -603,7 +834,9 @@ async function md2html(md, opt = {}) {
             }
 
             //逐欄樣式: data-style-th-{n} / data-style-td-{n}, n為0起算之欄索引(4欄則n=0~3)
-            //  語意為「第n欄」非「整表第n個cell」, 故逐列取該列第n個th/td套用, 使該欄各列皆生效(如white-space:nowrap讓整欄不換行)
+            //  語意為「第n欄」非「整表第n個cell」, 使該欄各列皆生效(如white-space:nowrap讓整欄不換行)
+            //  定位: 表內有rowspan/colspan時依邏輯欄(kpCol, 計入上方rowspan與左方colspan所佔之格, 跨欄之格只在起始欄套用), 否則逐列取該列第n個同標籤(th/td)之cell(與過去相同, 混用th/td之列照舊)
+            //  why 邏輯欄: 以「該列第n個」定位時, 遇rowspan之表(下方列少了左側cell)會錯欄
             //  置於全域data-style-th/td之後, 使逐欄可於全域基礎上追加或覆寫(CSS後宣告優先)
             each(el.attributes, (attr) => {
                 let ms = attr.name.match(/^data-style-(th|td)-(\d+)$/) //屬性名經HTML解析已小寫化
@@ -616,6 +849,16 @@ async function md2html(md, opt = {}) {
                 }
                 let tag = ms[1].toUpperCase()
                 let idx = cdbl(ms[2])
+                if (hasSpan) {
+                    each(tab.rows, (tr) => {
+                        each(tr.cells, (cell) => {
+                            if (cell.tagName === tag &amp;&amp; kpCol.get(cell) === idx) {
+                                addStyle(cell, add)
+                            }
+                        })
+                    })
+                    return
+                }
                 each(tab.querySelectorAll('tr'), (tr) => {
                     let cells = []
                     each(tr.children, (c) => {
@@ -629,6 +872,32 @@ async function md2html(md, opt = {}) {
                     }
                 })
             })
+
+            //code繼承所在儲存格之字級與行高, 再附加data-style-code
+            //  why: Word匯入html時行內code不繼承所在th/td之inline字級(沿用文件預設字級), 於固定行高下被裁切
+            //  取所在cell最終style之font-size、mso-line-height-rule、line-height(同名取最後者)寫入code, 置於code自帶style之前(自帶者優先)
+            each(tab.querySelectorAll('code'), (code) => {
+                let cell = code.closest('th, td')
+                let inh = ''
+                if (cell &amp;&amp; tab.contains(cell)) {
+                    inh = pickProps(cell.getAttribute('style') || '', ['font-size', 'mso-line-height-rule', 'line-height'])
+                }
+                let st = inh + styleCode
+                if (st !== '') {
+                    if (!/;\s*$/.test(st)) {
+                        st += ';'
+                    }
+                    code.setAttribute('style', st + (code.getAttribute('style') || ''))
+                }
+            })
+
+            //左右合併, 再上下合併(含不跨頁)
+            if (colsH.length > 0) {
+                mergeCellsH(tab, kpCol, colsH)
+            }
+            if (colsV.length > 0) {
+                mergeCellsV(tab, kpCol, colsV, mergeKeep, doc)
+            }
         }
         el.remove()
     })
@@ -700,7 +969,7 @@ export default md2html
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Mon Nov 09 2026 11:36:13 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.5</a> on Mon Nov 09 2026 15:22:02 GMT+0800 (台北標準時間) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

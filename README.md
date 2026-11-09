@@ -17,6 +17,15 @@ To view some examples for more understanding, visit examples:
 
 ## Upgrade Notes
 
+### Behavior change after 1.1.21：表格標記擴充（行內程式碼字級、逐欄樣式依邏輯欄、合併儲存格）
+
+**行為變更**（`md2html`／`WMd2html`；使用端需求見 Gitea #112、#113；新增標記屬性，未使用者不受影響）。
+- **styleDef 增列行內程式碼依所在元素明訂字級**：`.md li code`（`fontSizeDef`）、`.md table code`（`fontSizeTab`）、`.md p code`（`fontSizeP`）、`.md h1 code`～`.md h6 code`（`fontSizeH1`～`fontSizeH6`）；清單與表格內之區塊程式碼（`pre code`）維持 `fontSizeCode`。原因：Word 匯入 html 時 `<code>` 不繼承父層字級（`font-size:inherit` 亦無效），其 run 沿用文件預設字級，使同一表格、標題內程式碼與周圍文字字級不一，固定行高之表格並裁掉底線。`mergeStyle:true` 之輸出其 `<style>` 多出此 36 行（含註解，`mergeStyle:false` 則在 `styleDef`）；含程式碼之文件於瀏覽器之外觀不變（程式碼原即繼承所在元素字級）。**例外**：元素之字級若是以手寫 `style` 設定（而非 `fontSize*` 選項或 `data-style-th`／`data-style-td` 標記），其內行內程式碼於瀏覽器改採該元素種類之 `fontSize*` 選項值（如手寫 `style="font-size:9pt"` 之儲存格，其內程式碼為 `fontSizeTab`），請改用標記。
+- **`data-for="tab"` 之標記表內，行內程式碼繼承所在 th／td 最終 style 之 `font-size`、`mso-line-height-rule`、`line-height`**（同名取最後者，與 CSS 後宣告優先一致），寫入其內 `<code>` 之 `style`（置於 `<code>` 自帶 style 之前，自帶者優先）。過去無此處理，儲存格設 9pt 時程式碼於 Word 仍為 12pt。
+- **逐欄樣式（`data-style-th-{n}`／`data-style-td-{n}`）於含 `rowspan`／`colspan` 之表改依邏輯欄定位**（計入上方 rowspan 與左方 colspan 所佔之格；跨欄之格只在起始欄套用）：過去以「該列第 n 個 th／td」定位，rowspan 下方各列少了左側之格，樣式會錯欄或漏套。**無 `rowspan`／`colspan` 之表定位不變**（含混用 th／td 之列：`data-style-td-0` 仍為該列第 0 個 td）。
+- **新增標記**：`data-style-code`、`data-merge-h`、`data-merge-v`、`data-merge-keep`，見下方 Table Markup。
+- **影響**：未使用新屬性且無 `rowspan`／`colspan` 之表，輸出逐位元組不變（含 `data-style-*` 之標記表，僅其內行內程式碼於儲存格設字級時多一個 `style`）；`test/reportTrue.html` 因 styleDef 增列與範例新增而重產。
+
 ### Breaking changes after 1.1.12：原始 `<img>` 之 `src` 解析（引號形態、同行多個、處理範圍）
 
 **行為變更**（`WMd2html`；不保留舊行為，下游須連帶評估）。以下取代 after 1.1.11 與 Behavior change after 1.1.9 兩節末尾所列「同一行多個 `<img src>` 丟 `size(s)!==2`」「只處理雙引號 `src`」之已知限制。
@@ -63,6 +72,33 @@ To view some examples for more understanding, visit examples:
     <img src="pics/a.png" />
     <div>圖n 多行圖</div>
 </div>
+```
+
+## Table Markup
+
+於表格前以空 `<div data-for="tab" …></div>`（與表格間可隔空行，md 與 html 表格皆可）標記，屬性套用至其後第一張表格，處理後標記自動移除。欄索引一律 0 起算。
+
+| 屬性 | 作用 |
+|---|---|
+| `data-style-th`、`data-style-td` | 附加於全部 th、td 之 style |
+| `data-style-th-{n}`、`data-style-td-{n}` | 附加於第 n 欄之 th、td（於全域之後，可覆寫）；有 rowspan／colspan 之表依邏輯欄，否則為該列第 n 個同標籤之格 |
+| `data-style-code` | 附加於表內全部行內程式碼之 style（置於繼承之字級之後） |
+| `data-merge-h="0,1,2"` | 同一列內，指定欄之間左右相鄰且內容相同者合併為一格（colspan，保留最左格之內容與樣式），thead／tbody／tfoot 之列皆適用 |
+| `data-merge-v="0,1"` | 各 tbody 內，指定欄上下相鄰且內容相同者合併為一格（rowspan）；依列出順序為階層，後列之欄只在前列各欄之同一合併區塊內才合併 |
+| `data-merge-keep="true"` | 第一個 `data-merge-v` 欄之各區塊不跨頁（轉 docx 時區塊內各列不斷開、非末列與下一列同頁） |
+
+- 處理順序：全域樣式 → 逐欄樣式 → 行內程式碼繼承（儲存格之 `font-size`、`mso-line-height-rule`、`line-height`）→ 左右合併 → 上下合併 → 不跨頁。逐欄樣式先於合併，故合併格保留其欄之樣式；左右合併後之格不再參與上下合併，故跨整列之分類列會切斷上下合併。
+- 「內容相同」以儲存格 `innerHTML`（去頭尾空白）比對，同字而格式不同者不合併；空白格不合併；th 與 td 不互併；已有 `rowspan`／`colspan` 之格不參與；「相鄰」以邏輯欄連續判定，被上方 rowspan 佔住之欄不算相鄰。
+- 欄索引以逗號分隔，各項去頭尾空白後須為非負整數，重複者只取一次，無效之項略過（不拋錯、不影響其餘處理）；`data-merge-keep` 只有值為 `true`（去頭尾空白、全小寫）才啟用，且須有有效之 `data-merge-v`。
+
+```alias
+<div data-for="tab" data-style-td="font-size:9pt;" data-style-td-0="text-align:center; vertical-align:middle;" data-merge-h="0,1,2" data-merge-v="0" data-merge-keep="true"></div>
+
+| 系統 | 內容 | 內容 |
+|------|------|------|
+| 第一類 | 第一類 | 第一類 |
+| 系統甲 | `unit01` | 說明一 |
+| 系統甲 | `unit02` | 說明二 |
 ```
 
 ## Installation

@@ -46,7 +46,57 @@
 - 規則:換行佔位用 `<div data-for="br"></div>`,表格樣式用 `<div data-for="tab" data-style-th=... data-style-td=...>`.`<docx_br>`(2026-06-22 `4470986` 廢止)與 `for="..."`(2026-07-16 `88da0ce` 改為 `data-for`,因 DOMPurify 3.4.12 起洗掉 div 之 for)不得再用;marked 18.0.12 起含底線之標籤名(如 `<docx_br>`)會以字面文字顯示.
 - 盤點指令:`git grep --untracked -nE "docx_br|[^-]for=\"(br|tab)\"" -- src test examples`,應無結果(離開碼 1).
 - 站點:處理於 `src/md2html.mjs`(data-for="br"/"tab" 區段);使用於 `test/report.md`、`examples/ex-md2html.html`.已套.
-- 測試:`test/md2html.test.mjs`(data-for=br 2 條、data-for=tab 與逐欄樣式 7 條).
+- 表格標記(`data-for="tab"`)之屬性全集、定位、處理順序與無效值處置見 R-TABLE-01(2026-11-09 起);行內 code 之字級見 R-CODEFONT-01.
+- 測試:`test/md2html.test.mjs`(data-for=br 2 條、data-for=tab 與逐欄樣式 7 條;表格標記之擴充見 R-TABLE-01).
+
+## R-TABLE-01 表格標記(data-for="tab")以邏輯欄定位,處理順序固定,無效值視為未給
+
+- 規則:`div[data-for="tab"]` 之屬性套用至其後第一張表格(md 或 html 表格),處理後移除標記;屬性全集、語意與處理順序如下.使用端需求出處:Gitea #112、#113(2026-11-09).單一擁有者:`src/md2html.mjs` 之 data-for="tab" 區段與其上之內部輔助函數(`addStyle`、`getColMap`、`parseCols`、`pickProps`、`cellKey`、`canMerge`、`sameCell`、`mergeCellsH`、`mergeCellsV`).
+  1. **逐欄樣式依邏輯欄**:`data-style-th-{n}`/`data-style-td-{n}` 之 n 為 0 起算之欄索引;表內有實際跨列或跨欄之 cell 時,依邏輯欄定位——`getColMap` 計入上方 rowspan 與左方 colspan 所佔之格,rowspan 不跨 thead/tbody/tfoot 區段(超出者截至區段末列,`rowspan=0` 為至區段末列),跨欄之格只在起始欄套用.why:過去以「該列第 n 個 th/td」定位,rowspan 下方各列少了左側之格而錯欄或漏套.
+  2. **無跨列跨欄之表維持舊定位**:同列第 n 個同標籤(th 或 td)之 cell,混用 th/td 之列照舊(`data-style-td-0` 為該列第 0 個 td).why:使用端之既有輸出須逐位元組不變(主控裁示);邏輯欄於此類表與舊定位只在「混用 th/td 之列」不同.
+  3. **行內 code 繼承儲存格字級**:表內每個 code 取其所在 th/td 最終 style(全域與逐欄套用後)之 `font-size`、`mso-line-height-rule`、`line-height`(同名取最後者,與 CSS 後宣告優先一致),依此順序寫入 code 之 style,置於 code 自帶 style 之前(自帶者優先).why:Word 匯入 html 時 code 不繼承 th/td 之 inline 字級,於固定行高下被裁切.表外之 code 不處理.
+  4. **`data-style-code`**:附加於表內全部 code 之 style(位於繼承值之後、code 自帶 style 之前),缺結尾 `;` 者補之.
+  5. **`data-merge-h="0,1,2"`**:同一列內,指定欄之間邏輯欄相鄰且 `innerHTML`(去頭尾空白)相同者合併為一格(colspan,刪除右側之格,保留最左格之內容與樣式);thead/tbody/tfoot 之列皆適用;被上方 rowspan 佔住之欄不算相鄰.
+  6. **`data-merge-v="0,1"`**:各 tbody 內,指定欄上下相鄰且內容相同者合併為一格(rowspan,刪除下方之格);依列出順序為階層,後列之欄只在前列各欄之同一合併區塊內才合併;僅 tbody(thead/tfoot 刻意不併);各 tbody 獨立.
+  7. **`data-merge-keep="true"`**:第一個 `data-merge-v` 欄之各區塊不跨頁——區塊內各列加 `page-break-inside:avoid`(Word 之 cantSplit),非末列各格內容外包 `<div style="page-break-after:avoid;">`(Word 之 keepNext);須有有效之 `data-merge-v`.
+  8. **處理順序**:全域樣式 → 逐欄樣式 → code 繼承 → 左右合併 → 上下合併 → 不跨頁.逐欄樣式先於合併,故合併格保留其欄之樣式;左右合併後之格不再參與上下合併,故跨整列之分類列切斷上下合併.標記處理先於 `tableHorizontalAlignmentCenter` 之外包.
+  9. **無效值視為未給,不拋錯、不影響其餘處理**(依 `輸入參數之檢測機制.md` K3 之精神:選填之值給了而不合,改用未給;此為 md 內容之標記屬性,非函數 opt):欄索引逗號分隔,各項去頭尾空白後須為 `^\d+$` 且為安全整數,重複者取一次,無效之項略過(含超出欄數者無對應 cell,無作用);`data-merge-keep` 只有去頭尾空白後等於 `true`(全小寫,同 B2 廣義布林)才啟用;標記後無表格者只移除標記.
+  10. **合併之保守判準**:空白格(`innerHTML` 去頭尾空白為空)不合併;th 與 td 不互併;已有 rowspan/colspan(含先行左右合併而成之 colspan)之格不參與;內容以 `innerHTML` 比對(含行內 code 已繼承之 style),同字而格式不同者不合併.
+- 盤點指令:`git grep --untracked -nE "kpCol|hasSpan|colsH|colsV|mergeKeep" -- src`;表格標記屬性全集:`git grep --untracked -noE "data-(style|merge)-[a-z]+(-\{n\})?" -- src README.md test/report.md`.
+- 站點全集與判準(2026-11-09):
+
+| 站點 | 判準 |
+|---|---|
+| `data-style-th/td-{n}`(有 span 之表) | 已套邏輯欄(`kpCol`) |
+| `data-style-th/td-{n}`(無 span 之表) | 刻意不套邏輯欄:(2) 之舊定位,輸出逐位元組不變 |
+| 全域 `data-style-th/td` | 不涉定位(`tab.querySelectorAll('th'/'td')`),維持 |
+| code 繼承與 `data-style-code` | 已套(`tab.querySelectorAll('code')` 取最近之 th/td,表外與 caption 內之 code 只附加 `data-style-code`) |
+| `data-merge-h` | 已套(thead/tbody/tfoot 各列) |
+| `data-merge-v`、`data-merge-keep` | 已套(僅 tbody);thead/tfoot 刻意不套(建議以 tbody 資料列之群組為範圍) |
+| 巢狀表(cell 內之 table) | 邏輯欄、合併只處理外層 `tab.rows`;全域 `data-style-th/td` 與無 span 之舊定位仍含巢狀表之 th/td/tr(與過去相同,已知限制) |
+
+- 測試(`test/md2html.test.mjs`,2026-11-09 共 35 條,依 R-TABLE-01 條號標註):逐欄樣式依邏輯欄 5 條((1)(2));行內 code 之 code 繼承與 `data-style-code` 5 條((3)(4));合併 22 條((5)~(10));另 3 條 styleDef(R-CODEFONT-01).指令:`npx mocha --no-parallel "test/md2html.test.mjs" --timeout 180000`.
+- 驗證(2026-11-09):①修前紅:新測試 35 條對 HEAD 版 `src/md2html.mjs` 之 28 紅(其餘 7 條為「不變」類之守衛:未用字級與 `data-style-code` 時 code 不加 style、表外 code 不受影響、無 span 之表維持舊定位、未指定與不相鄰不合併、已有 span 不參與、空白格與 th/td 不併、標記後無表格不拋),守衛類與其餘以變異驗證:25 種變異全殺(各變異與其被殺之測試見 `sgud/exp/experience.md` 2026-11-09);②等價(L3):無標記之表 60 份、只用既有屬性且無 rowspan/colspan 之表 120 份(含 raw html 混用 th/td、tfoot、caption)、repo 既有 md 6 份,HEAD 版與現行版輸出逐位元組相同(含 code 者僅差 `<code style>`);③轉 docx(Word 16,w-html2docx 1.0.49):建議附錄之表 A~E 與左右合併表 F 共 13 項皆符(`w:sz`、`w:vMerge`、`w:gridSpan`、`w:cantSplit`、`w:keepNext`、`w:shd`、`w:color`、`w:jc`),HEAD 版 13 項皆不符.
+
+## R-CODEFONT-01 行內 code 之字級須明訂為所在元素之字級(styleDef)
+
+- 規則:styleDef 須對 li、table、p、h1~h6 內之行內 code 明訂 `font-size` 為該元素種類之字級選項值(`fontSizeDef`、`fontSizeTab`、`fontSizeP`、`fontSizeH1`~`fontSizeH6`);li、table 內之區塊程式碼(`pre code`)維持 `fontSizeCode`.why:Word 匯入 html 時 `<code>` 不繼承父層字級(`font-size:inherit` 亦無效),其 run 無 `w:sz` 而沿用文件預設字級(12pt),使同表同標題內程式碼與周圍文字不一,固定行高下底線被裁.不採等長字型(w-html2docx 以 `fontFamilies` 強制全文字型,使用端確認不需).
+- 順序(同特異度,後宣告優先):li、table 先於 p(td/li 內 p 之文字為 `fontSizeP`,其內 code 須同);pre 規則(`.md li pre code`、`.md table pre code`)後於 li、table 規則.
+- 單一擁有者:`src/md2html.mjs` 之 styleDef(R-CSS-01 之同一字串);表格標記內之 code 另依 R-TABLE-01(3) 依儲存格 inline style 明訂.
+- 盤點指令:`git grep --untracked -nE "^\.md .*code \{" -- src`;各元素內 code 之父元素鏈以 md2html 轉 `p/li/blockquote/h1/表格/註腳/清單內 pre` 實測(2026-11-09).
+- 站點全集與判準(2026-11-09):
+
+| 站點(code 之位置) | 判準 |
+|---|---|
+| p、li、table(td/th)、h1~h6 | 已套 |
+| blockquote | 已套:marked 於 blockquote 內必包 p(實測 `blockquote > p > code`),隨 p |
+| 註腳(`section > ol > li > p`) | 已套:隨 p |
+| li、table 內之 `pre code`(區塊) | 已套 `fontSizeCode`(與過去之瀏覽器外觀相同:pre 之 `fontSizeCode` 由 code 繼承) |
+| 頂層 `pre code`(區塊) | 刻意不套:過去即無 code 規則,維持 |
+| raw html 之 div/span 等內之 code | 未套,已知限制:瀏覽器繼承 `.md` 之 `fontSizeDef`,Word 沿用文件預設字級 |
+| 元素以手寫 `style` 設字級者之內之 code | 未套,已知限制:瀏覽器改採該元素種類之 `fontSize*`(README〈Upgrade Notes〉已註明);表格請改用 data-style-th/td 標記(R-TABLE-01(3)) |
+
+- 測試:`test/md2html.test.mjs` 之 styleDef 3 條(各元素之規則、後宣告順序與 pre 規則、`mergeStyle:true` 內嵌);`test/reportTrue.html` 之 styleDef 增列 36 行(含 2 行註解與 1 空行)為此規則之標準輸出.
 
 ## R-EXAMPLE-01 範例頁測試 md 須與 test/report.md 逐字一致
 
@@ -142,14 +192,14 @@
 | 測試檔 | 涵蓋 | 條數 |
 |---|---|---|
 | `test/unit-imgPath.test.mjs` | 本機圖片引用:路徑模式、缺圖 reject、base64 總量上限、原始 `<img>` 之 `src` 屬性解析(R-IMGREF-01) | 45(+1 pending) |
-| `test/md2html.test.mjs` | DOM 後處理(display:none、data-for=br/tab、逐欄樣式、linkBlank、表格置中) | 13 |
+| `test/md2html.test.mjs` | DOM 後處理(display:none、data-for=br/tab、逐欄樣式、linkBlank、表格置中) 13 條;表格標記擴充 35 條(R-TABLE-01、R-CODEFONT-01:行內 code 字級 8、逐欄樣式依邏輯欄 5、合併儲存格 22) | 48 |
 | `test/genNumForPicAndTab.test.mjs` | 圖表自動編號與交叉引用 | 4 |
 | `test/unit-genNumRefs.test.mjs` | 圖表名取法(單行/多行)與未解析引用警告(R-FIGREF-01) | 17 |
-| `test/WMd2html.test.mjs` | report.md 全文逐字比對 `test/reportTrue.html`(現狀指紋) | 1 |
+| `test/WMd2html.test.mjs` | report.md 全文逐字比對 `test/reportTrue.html`(現狀指紋;4.1.3、4.1.4 為表格標記之範例,與 `examples/ex-md2html.html` 同步,R-EXAMPLE-01) | 1 |
 | `test/unit-md2html-deps.test.mjs` | 依賴契約:KaTeX(CSS 版本、行內、區塊、nonStandard、throwOnError)、highlight(已知/未知/未指定語言)、footnote 屬性、marked renderer 與 async walkTokens、DOMPurify(on*、script/iframe、javascript:、`<style>` 移除與其邊界,見 R-SANITIZE-01)、WMd2html(CSS、`<style>` 移除、Footnotes 標題隱藏、圖片轉 base64) | 23 |
 
-- 指令:`npm test`(2026-10-31 為 103 passing、1 pending,其中 `unit-imgPath` 45 條、其餘各檔合計 58 條[13+4+17+1+23];2026-10-29 為 76 passing、1 pending[`unit-imgPath` 之 `"` 路徑,Windows 無法建檔],加 `unit-imgPath` 21 條;2026-10-25 為 58 passing;2026-10-11 為 41,加 `unit-genNumRefs` 17 條).`test/report.md` 第 140 行標題含正文 `{n}`,`test/WMd2html.test.mjs` 轉換時會多印一行警告(屬實:該 `{n}` 對不上任何圖表名),不影響逐字比對.
-- 基準檔重產:`test/reportTrue.html` 僅在依賴升版造成之預期差異時重產;先列預期差異,以腳本逐行驗證差異僅限預期項目,經使用者授權才覆蓋.2026-10-07 重產,差異 3 行(KaTeX CSS 版本、base/strut/sizing 改名).
+- 指令:`npm test`(2026-11-09 為 138 passing、1 pending,其中 `md2html.test.mjs` 48 條[13+35];2026-10-31 為 103 passing、1 pending,其中 `unit-imgPath` 45 條、其餘各檔合計 58 條[13+4+17+1+23];2026-10-29 為 76 passing、1 pending[`unit-imgPath` 之 `"` 路徑,Windows 無法建檔],加 `unit-imgPath` 21 條;2026-10-25 為 58 passing;2026-10-11 為 41,加 `unit-genNumRefs` 17 條).`test/report.md` 第 140 行標題含正文 `{n}`,`test/WMd2html.test.mjs` 轉換時會多印一行警告(屬實:該 `{n}` 對不上任何圖表名),不影響逐字比對.
+- 基準檔重產:`test/reportTrue.html` 僅在依賴升版造成之預期差異時重產;先列預期差異,以腳本逐行驗證差異僅限預期項目,經使用者授權才覆蓋.2026-10-07 重產,差異 3 行(KaTeX CSS 版本、base/strut/sizing 改名).2026-11-09 重產(主控授權,Gitea #112、#113):分兩階段驗證——① report.md 不動、僅 styleDef 增列行內 code 規則(R-CODEFONT-01),輸出差異為單一處純新增 36 行(0 刪除);② report.md 新增 4.1.3、4.1.4 兩節範例後,與修前之總差異為兩處純新增(styleDef 36 行、新增兩節 65 行,0 刪除),其餘 459 行逐字不變.重產指令:以 `test/WMd2html.test.mjs` 相同選項(`imgWidthMax:'500px'`)對 `test/report.md` 呼叫 `WMd2html` 寫至暫存路徑,與現行 `reportTrue.html` 以 `git diff --no-index -U0` 比對,確認僅新增後覆蓋.
 
 ## 已知限制
 
@@ -159,11 +209,13 @@
 - md2html 與 WMd2html 不對稱(範圍外,未修):隱藏 Footnotes 標題與 li 間距只在 `src/WMd2html.mjs` 處理,瀏覽器端會顯示「Footnotes」標題;WMd2html 以字串取代 `<li>` 加間距,不涵蓋帶屬性之 `<li id="...">`(註腳項目).
 - `toolg/gDistRollup.mjs` 之 `getFiles` import 未使用(eslint no-unused-vars,既有).
 - `test/genNumForPicAndTab.test.mjs` 以 `./tmp` 為測試暫存(全域規範應為 `test/_tmp/`,既有).
+- 表格標記(R-TABLE-01、R-CODEFONT-01)之已知限制:①巢狀表只處理外層之邏輯欄與合併;②合併以 `innerHTML` 比對,同字而行內 code 樣式因欄而異者不合併;③超出區段末列之 rowspan 截至區段末列(依 HTML 表格模型,未以瀏覽器實測);④raw html 之 div/span 內之 code 與手寫 `style` 設字級之元素內之 code 不在 styleDef 之 code 規則內(見 R-CODEFONT-01 站點表);⑤Word 實測僅 Word 16 與 w-html2docx 1.0.49 一組.
 
 ## 破壞性變更紀錄
 
 | 日期 | 變更 | 影響 |
 |---|---|---|
+| 2026-11-09 | 表格標記擴充(R-TABLE-01、R-CODEFONT-01;Gitea #112、#113):styleDef 增列行內 code 依所在元素之字級;標記表內 code 繼承儲存格字級行高、`data-style-code`;逐欄樣式於有 rowspan/colspan 之表改依邏輯欄;新增 `data-merge-h`、`data-merge-v`、`data-merge-keep` | 新增屬性,未使用者不受影響;未使用新屬性且無 rowspan/colspan 之表輸出逐位元組不變(差異比對 180 份 + repo 既有 md 6 份,含 code 者僅差 `<code style>`);行為變更三處:①styleDef 多 36 行(`mergeStyle:true` 之 `<style>` 同);②元素以手寫 `style` 設字級者,其內行內 code 於瀏覽器改採該元素種類之 `fontSize*`;③有 rowspan/colspan 之表之逐欄樣式由「該列第 n 個」改為邏輯欄(過去錯欄/漏套者自此正確).下游 w-md2docx/w-html2docx 不需改(轉 docx 實測 13 項皆符) |
 | 2026-10-07 | katex 0.16.47 → 0.18.10 | 輸出之 KaTeX 內部 class(base、strut、sizing 等 20 個)加 `katex-` 前綴;styleSrcs 之 KaTeX CSS 改隨安裝版;下游自行載入 KaTeX CSS 或以其內部 class 寫樣式者須同步 |
 | 2026-10-07 | jsdom 29.1.1 → 30.1.2 | Node 下限 `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0`(Node 端轉換路徑;瀏覽器端不載入 jsdom);程式碼無須改 |
 | 2026-10-07 | marked 18.0.10 → 18.1.0 | CommonMark 修正:含底線之自訂標籤以字面顯示、括號不成對之連結目的地不成連結、巢狀連結外層不成連結、硬換行後前導空白去除 |

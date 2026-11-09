@@ -149,6 +149,42 @@
     font-family: Consolas, "Courier New", monospace;
 }
 
+/* 行內code明訂為所在元素之字級(Word匯入html時code不繼承父層字級, font-size:inherit亦無效, 會沿用文件預設字級而與周圍文字不一) */
+/* 後宣告優先: li、table先於p, 使清單項目與儲存格內之p內code隨p; 區塊程式碼(pre code)於li、table內維持fontSizeCode */
+.md li code {
+    font-size: 12pt;
+}
+.md table code {
+    font-size: 11pt;
+}
+.md p code {
+    font-size: 12pt;
+}
+.md h1 code {
+    font-size: 20pt;
+}
+.md h2 code {
+    font-size: 16pt;
+}
+.md h3 code {
+    font-size: 14pt;
+}
+.md h4 code {
+    font-size: 12pt;
+}
+.md h5 code {
+    font-size: 12pt;
+}
+.md h6 code {
+    font-size: 12pt;
+}
+.md li pre code {
+    font-size: 10pt;
+}
+.md table pre code {
+    font-size: 10pt;
+}
+
 .md a {
     color: #0066cc;
     cursor: pointer;
@@ -369,6 +405,71 @@
 <td style="font-size:10pt;white-space:nowrap;">B-002-ABC</td>
 <td style="font-size:10pt;">進行中</td>
 <td style="font-size:10pt;font-size:8pt;">第二欄字級較小</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h3>4.1.3 表格內行內程式碼之字級與樣式（data-style-code）</h3>
+<p>表格內以反引號標記之行內程式碼，字級與行高自動依其所在儲存格（th／td 最終 style 之 font-size、mso-line-height-rule、line-height，同名取最後者）而定，與同格文字一致；轉 docx 時行內程式碼不再沿用文件預設字級。data-style-code 可另為該表內全部行內程式碼附加樣式。</p>
+<p>下表：td 9pt 固定行高 11pt；行內程式碼隨儲存格字級，並加淺灰底與顏色。</p>
+<div style="text-align: center;"><table style="display: inline-table;">
+<thead>
+<tr>
+<th>模組</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td style="font-size:9pt; mso-line-height-rule:exactly; line-height:11pt;"><code style="font-size:9pt;mso-line-height-rule:exactly;line-height:11pt;background:#eeeeee; color:#b03060;">moduleA</code></td>
+<td style="font-size:9pt; mso-line-height-rule:exactly; line-height:11pt;">讀取 <code style="font-size:9pt;mso-line-height-rule:exactly;line-height:11pt;background:#eeeeee; color:#b03060;">inputData</code> 並轉換</td>
+</tr>
+<tr>
+<td style="font-size:9pt; mso-line-height-rule:exactly; line-height:11pt;"><code style="font-size:9pt;mso-line-height-rule:exactly;line-height:11pt;background:#eeeeee; color:#b03060;">moduleB</code></td>
+<td style="font-size:9pt; mso-line-height-rule:exactly; line-height:11pt;">輸出 <code style="font-size:9pt;mso-line-height-rule:exactly;line-height:11pt;background:#eeeeee; color:#b03060;">resultData</code></td>
+</tr>
+</tbody></table></div>
+<hr>
+<h3>4.1.4 合併儲存格（data-merge-h／data-merge-v／data-merge-keep）</h3>
+<p>md 表格無合併語法，改以標記指定欄索引（0 起算，逗號分隔）：</p>
+<ul>
+<li style="margin:7px 0;">data-merge-h：同一列內，指定欄之間左右相鄰且內容相同者合併為一格（colspan），表頭亦適用。</li>
+<li style="margin:7px 0;">data-merge-v：各 tbody 內，指定欄上下相鄰且內容相同者合併為一格（rowspan）；依列出順序為階層，後列之欄只在前列各欄之同一區塊內合併。</li>
+<li style="margin:7px 0;">data-merge-keep="true"：data-merge-v 第一個合併欄之各區塊不跨頁（轉 docx 時區塊內各列不斷開、並與下一列同頁）。</li>
+<li style="margin:7px 0;">空白格不合併，已有 rowspan／colspan 之格不參與，無效之欄索引略過。</li>
+<li style="margin:7px 0;">處理順序：全域樣式 → 逐欄樣式 → 行內程式碼繼承 → 左右合併 → 上下合併 → 不跨頁；左右合併後之格不再參與上下合併，故跨整列之分類列會切斷上下合併。</li>
+</ul>
+<p>下表：表頭「內容」跨 2 欄；分類列跨整列；「系統」欄上下合併且各區塊不跨頁。</p>
+<div style="text-align: center;"><table style="display: inline-table;">
+<thead>
+<tr>
+<th>系統</th>
+<th colspan="2">內容</th>
+
+</tr>
+</thead>
+<tbody><tr style="page-break-inside:avoid;">
+<td style="font-size:9pt;text-align:center; vertical-align:middle;" colspan="3">第一類</td>
+
+
+</tr>
+<tr style="page-break-inside:avoid;">
+<td style="font-size:9pt;text-align:center; vertical-align:middle;" rowspan="2"><div style="page-break-after:avoid;">系統甲</div></td>
+<td style="font-size:9pt;"><div style="page-break-after:avoid;"><code style="font-size:9pt;">unit01</code></div></td>
+<td style="font-size:9pt;"><div style="page-break-after:avoid;">說明一</div></td>
+</tr>
+<tr style="page-break-inside:avoid;">
+
+<td style="font-size:9pt;"><code style="font-size:9pt;">unit02</code></td>
+<td style="font-size:9pt;">說明二</td>
+</tr>
+<tr style="page-break-inside:avoid;">
+<td style="font-size:9pt;text-align:center; vertical-align:middle;" colspan="3">第二類</td>
+
+
+</tr>
+<tr style="page-break-inside:avoid;">
+<td style="font-size:9pt;text-align:center; vertical-align:middle;">系統乙</td>
+<td style="font-size:9pt;"><code style="font-size:9pt;">unit03</code></td>
+<td style="font-size:9pt;">說明三</td>
 </tr>
 </tbody></table></div>
 <hr>

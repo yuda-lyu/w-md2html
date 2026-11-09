@@ -152,6 +152,45 @@ n 為 0 起算之欄索引（4 欄則 n=0~3），套用至該欄各列之 th／t
 
 ---
 
+### 4.1.3 表格內行內程式碼之字級與樣式（data-style-code）
+
+表格內以反引號標記之行內程式碼，字級與行高自動依其所在儲存格（th／td 最終 style 之 font-size、mso-line-height-rule、line-height，同名取最後者）而定，與同格文字一致；轉 docx 時行內程式碼不再沿用文件預設字級。data-style-code 可另為該表內全部行內程式碼附加樣式。
+
+下表：td 9pt 固定行高 11pt；行內程式碼隨儲存格字級，並加淺灰底與顏色。
+
+<div data-for="tab" data-style-td="font-size:9pt; mso-line-height-rule:exactly; line-height:11pt;" data-style-code="background:#eeeeee; color:#b03060;"></div>
+
+| 模組 | 說明 |
+|------|------|
+| `moduleA` | 讀取 `inputData` 並轉換 |
+| `moduleB` | 輸出 `resultData` |
+
+---
+
+### 4.1.4 合併儲存格（data-merge-h／data-merge-v／data-merge-keep）
+
+md 表格無合併語法，改以標記指定欄索引（0 起算，逗號分隔）：
+
+- data-merge-h：同一列內，指定欄之間左右相鄰且內容相同者合併為一格（colspan），表頭亦適用。
+- data-merge-v：各 tbody 內，指定欄上下相鄰且內容相同者合併為一格（rowspan）；依列出順序為階層，後列之欄只在前列各欄之同一區塊內合併。
+- data-merge-keep="true"：data-merge-v 第一個合併欄之各區塊不跨頁（轉 docx 時區塊內各列不斷開、並與下一列同頁）。
+- 空白格不合併，已有 rowspan／colspan 之格不參與，無效之欄索引略過。
+- 處理順序：全域樣式 → 逐欄樣式 → 行內程式碼繼承 → 左右合併 → 上下合併 → 不跨頁；左右合併後之格不再參與上下合併，故跨整列之分類列會切斷上下合併。
+
+下表：表頭「內容」跨 2 欄；分類列跨整列；「系統」欄上下合併且各區塊不跨頁。
+
+<div data-for="tab" data-style-td="font-size:9pt;" data-style-td-0="text-align:center; vertical-align:middle;" data-merge-h="0,1,2" data-merge-v="0" data-merge-keep="true"></div>
+
+| 系統 | 內容 | 內容 |
+|------|------|------|
+| 第一類 | 第一類 | 第一類 |
+| 系統甲 | `unit01` | 說明一 |
+| 系統甲 | `unit02` | 說明二 |
+| 第二類 | 第二類 | 第二類 |
+| 系統乙 | `unit03` | 說明三 |
+
+---
+
 ### 4.2 程式碼區塊（JavaScript）
 
 ```js
