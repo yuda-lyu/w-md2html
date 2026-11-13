@@ -217,6 +217,28 @@
 - 修前紅(2026-10-31,`git archive HEAD src` 解到 `./tmp/` 之複本,以 mocha 跑新測試檔之新 describe):24 條中 22 條敗、2 條綠(非本機圖×2 模式,屬保護「不處理」不被破壞之案).
 - 等價(L3,2026-10-31,以 HEAD 複本與現行 src 轉同一批 md,各 `imgConvertToBase64` 兩值):`test/report.md`、`SECURITY.md`、`sgud/exp/experience.md` 輸出逐字相同;`README.md`、`sgud/rule/rulebook.md`、`sgud/state/state.md`(文中說明含 `src="` 字樣)修前丟 `size(s)!==2`,現可轉換.
 
+## R-JSDOM-01 Node 端對 jsdom 之依賴限於下列面向;輸出不得隨 jsdom 之 CSS 引擎序列化而變
+
+- 規則:①`tableHorizontalAlignmentCenter` 將 table 設 inline-table 時,只於 `style` 屬性末尾附加 `display: inline-table;`(`setInlineTable`,前值未以 `;` 結尾先補;既有 display 帶 `!important` 則附加之宣告亦帶;已為 `inline-table` 不重複),**不得以 `el.style.xxx = …` 賦值**(賦值會使整串 style 由 DOM 實作重新序列化);外包 div 以 `setAttribute('style', 'text-align: center;')`.②`new JSDOM(html)` 只用預設選項(不設 `runScripts`、`resources`),建構子回傳即視為完整解析,不讀 `readyState`、不等 `load`、不用 `getComputedStyle`、不用 canvas.③`rowSpan`/`colSpan` 直接用 DOM 之 IDL 值(已夾限),不自行 `parseInt`.
+- why①:jsdom 31 之 CSS 引擎重寫,對 `el.style` 賦值後整串 style 之序列化結果與 30.x 不同:`page-break-*` 被改寫為 `break-*`(Word 匯入只認 `page-break-*`)、`-webkit-` 前綴被移除、字型名引號被拿掉、簡寫重排與值正規化;30.x 則靜默丟棄大寫屬性名、`mso-*`、`filter`、不合法宣告(31 同樣丟 `mso-*`、`filter`).改以字串附加後,輸出與 jsdom 版本、瀏覽器引擎皆無關(同一份 src 於 jsdom 30.1.3、31.0.0 之輸出逐字相同;HeadlessChrome 156 與 Node 端相同).
+- 單一擁有者:`src/md2html.mjs` 之 `setInlineTable`(含其呼叫處);`src/WMd2html.mjs` 之 `getUnresolvedRefs`.
+- 盤點指令:①`git grep -n -E "\.style(\.[A-Za-z]+)* *=[^=]" -- src`,判準:`.style` 賦值 0 處(`.style` 只出現在 `setInlineTable` 之讀取 `.style.display`、`.style.getPropertyPriority`,及說明註解);②`git grep -n -E "getComputedStyle|runScripts|resources *:|readyState|createCanvas|getContext|fromURL|fromFile|\.serialize\(" -- src`,判準:0 命中;③`git grep -n "new JSDOM" -- src`,判準:恰 2 處(`md2html.mjs` `new JSDOM('')`、`WMd2html.mjs` `new JSDOM(html)`),皆無第二個引數(預設選項).
+- 站點全集與判準(2026-11-14,jsdom 31.0.0):
+
+| 站點 | 依賴之 jsdom 行為 | 31 破壞性變更之影響 | 判準 |
+|---|---|---|---|
+| `src/md2html.mjs:736-740` `new JSDOM('')`、`DOMPurify(window)`、`window.document` | 空文件、DOM API | 無 | 不受影響 |
+| `src/md2html.mjs:753、892` `box.innerHTML` 解析片段與序列化 | parse5 片段解析與序列化 | 無(序列化 13 型探測輸出不變;片段解析不經非同步) | 不受影響 |
+| `src/md2html.mjs:756-872` `querySelectorAll`(`[style*="display:none"]`、`div[data-for=…]`、`th`、`td`、`tr`、`code`、`a[href]`、`table`)、`closest('th, td')`、`getAttribute/setAttribute` | 選擇器、屬性 | CSS 引擎重寫含選擇器;9 組選擇器探測輸出不變 | 不受影響 |
+| `src/md2html.mjs:51-227` `getColMap`、`cellKey`、`canMerge`、`mergeCellsH/V`:`tab.rows`、`tr.cells`、`rowSpan`、`colSpan`、`innerHTML` | IDL 夾限(rowspan=0 回 0、colspan=0 回 1、無效回 1、colspan 上限 1000、rowspan 上限 65534) | 無 | 不受影響 |
+| `src/md2html.mjs:36-47、883-886` `setInlineTable`、外包 div(原為 `el.style.display=`、`wrap.style.textAlign=`) | CSSOM 賦值後整串序列化 | **受影響**(見上 why①) | 已調適 |
+| `src/WMd2html.mjs:225-248` `getUnresolvedRefs`:`new JSDOM(html)` 後同步 `createTreeWalker`、`querySelectorAll`、`replaceWith/before/after`、`textContent`、`window.close()` | 建構子回傳完整解析 | HTML 解析改非同步(遇阻塞式 script 暫停);預設選項下 script 不載入不執行,實測 8 型含外部阻塞式 script/async/defer/module/document.write/link/@import/iframe 皆回傳即完整(`readyState` 30.x 為 `loading`、31 為 `interactive`,不屬契約) | 不受影響,測試鎖定 |
+| `test/unit-imgPath.test.mjs:63、544` `new JSDOM(html)` | 測試端解析輸出 | 同上 | 不受影響 |
+
+- 測試:`test/unit-md2html-jsdom.test.mjs` 27 條——table 之 style 不改寫與 display 覆寫 13 條(①)、jsdom 行為契約 6 條(②③:預設選項即完整解析 8 型、片段解析、rowSpan/colSpan 夾限、畸形跨度不丟錯、宣告主版號與已安裝一致且 Node 符合 engines、1000 層巢狀)、未解析引用警告於含 script/外部資源之自訂模板 8 條(②);另 `test/md2html.test.mjs` 之 table 置中既有案.指令:`npx mocha --no-parallel "test/unit-md2html-jsdom.test.mjs" --timeout 180000`
+- 驗證紀錄(2026-11-14,jsdom 30.1.3 → 31.0.0):①**修前紅**:未調適之 src(以 el.style 賦值)配 jsdom 31 跑新測試 10 敗、17 綠(綠者為 jsdom 行為與警告之守衛案).②**變異**:`setInlineTable` 拿掉 `!important` 分支、拿掉已為 inline-table 之早退、改為「已有 display 即不覆寫」、`getUnresolvedRefs` 於首個 `<script` 截斷,4 種全被抓到(1、1、3、6 條敗).③**等價比對**(L3):同一份輸入(md 207 份×2 組選項=414、WMd2html 26、jsdom 探測 133,共 573)於 30.1.3 與 31.0.0 各跑兩次,同版兩次逐位元組相同(決定性);調適後 src 於兩版輸出 0 差異(md 414、WMd2html 26);調適前 src 兩版差異 24/414,皆僅 `<table style>` 屬性值(其餘逐位元組相同).④**瀏覽器端**:以 w-package-tools 之 `rollupFile` 將 src 打包至暫存夾,headless Chromium 156 載入實跑 9 案與 Node 端預期逐字相同.⑤`npm audit --omit=dev` 0 vulnerabilities.
+- 已知限制:巢狀深度——轉換遞迴上限在 jsdom/parse5 之 `innerHTML` 序列化(`serializeElement` 遞迴),未預熱行程約 2200 層通過、2300 層丟 `Maximum call stack size exceeded`(30.1.3 與 31.0.0 相同,每次新行程階梯探測各 3 次);已預熱行程可更深(6000 層邊界成敗不定);屬既有限制,範圍外未修.
+
 ## R-TEST-01 測試清單與基準檔重產規則
 
 | 測試檔 | 涵蓋 | 條數 |
@@ -227,8 +249,9 @@
 | `test/unit-genNumRefs.test.mjs` | 圖表名取法(單行/多行)與未解析引用警告(R-FIGREF-01) | 17 |
 | `test/WMd2html.test.mjs` | report.md 全文逐字比對 `test/reportTrue.html`(現狀指紋;4.1.3、4.1.4 為表格標記之範例,與 `examples/ex-md2html.html` 同步,R-EXAMPLE-01) | 1 |
 | `test/unit-md2html-deps.test.mjs` | 依賴契約:KaTeX(CSS 版本、行內、區塊、nonStandard、throwOnError、含中文與字型外符號之公式不因 strict 變錯誤呈現,見 R-KATEX-01)、highlight(已知/未知/未指定語言)、footnote 屬性、marked renderer 與 async walkTokens、DOMPurify(on*、script/iframe、javascript:、`<style>` 移除與其邊界,見 R-SANITIZE-01)、WMd2html(CSS、`<style>` 移除、Footnotes 標題隱藏、圖片轉 base64) | 26 |
+| `test/unit-md2html-jsdom.test.mjs` | jsdom 依賴契約(R-JSDOM-01):table 置中時 style 宣告不改寫與 display 覆寫、預設選項下建構子回傳即完整解析、rowSpan/colSpan 夾限、含 script/外部資源之模板之未解析引用警告、宣告主版號與已安裝一致、1000 層巢狀 | 27 |
 
-- 指令:`npm test`(2026-11-09 之 R-KATEX-01 新增 3 條後為 141 passing、1 pending[見 state.md];同日稍早為 138 passing、1 pending,其中 `md2html.test.mjs` 48 條[13+35];2026-10-31 為 103 passing、1 pending,其中 `unit-imgPath` 45 條、其餘各檔合計 58 條[13+4+17+1+23];2026-10-29 為 76 passing、1 pending[`unit-imgPath` 之 `"` 路徑,Windows 無法建檔],加 `unit-imgPath` 21 條;2026-10-25 為 58 passing;2026-10-11 為 41,加 `unit-genNumRefs` 17 條).`test/report.md` 第 140 行標題含正文 `{n}`,`test/WMd2html.test.mjs` 轉換時會多印一行警告(屬實:該 `{n}` 對不上任何圖表名),不影響逐字比對.
+- 指令:`npm test`(2026-11-14 jsdom 30.1.3 → 31.0.0 升版與 R-JSDOM-01 新增 27 條後為 168 passing、1 pending,升版前後既有 141 條皆綠[修前 jsdom 30.1.3 與升版後 31.0.0 配未調適 src 各為 141 passing、1 pending、0 failing];2026-11-09 之 R-KATEX-01 新增 3 條後為 141 passing、1 pending[見 state.md];同日稍早為 138 passing、1 pending,其中 `md2html.test.mjs` 48 條[13+35];2026-10-31 為 103 passing、1 pending,其中 `unit-imgPath` 45 條、其餘各檔合計 58 條[13+4+17+1+23];2026-10-29 為 76 passing、1 pending[`unit-imgPath` 之 `"` 路徑,Windows 無法建檔],加 `unit-imgPath` 21 條;2026-10-25 為 58 passing;2026-10-11 為 41,加 `unit-genNumRefs` 17 條).`test/report.md` 第 140 行標題含正文 `{n}`,`test/WMd2html.test.mjs` 轉換時會多印一行警告(屬實:該 `{n}` 對不上任何圖表名),不影響逐字比對.
 - 基準檔重產:`test/reportTrue.html` 僅在依賴升版造成之預期差異時重產;先列預期差異,以腳本逐行驗證差異僅限預期項目,經使用者授權才覆蓋.2026-10-07 重產,差異 3 行(KaTeX CSS 版本、base/strut/sizing 改名).2026-11-09 重產(主控授權,Gitea #112、#113):分兩階段驗證——① report.md 不動、僅 styleDef 增列行內 code 規則(R-CODEFONT-01),輸出差異為單一處純新增 36 行(0 刪除);② report.md 新增 4.1.3、4.1.4 兩節範例後,與修前之總差異為兩處純新增(styleDef 36 行、新增兩節 65 行,0 刪除),其餘 459 行逐字不變.重產指令:以 `test/WMd2html.test.mjs` 相同選項(`imgWidthMax:'500px'`)對 `test/report.md` 呼叫 `WMd2html` 寫至暫存路徑,與現行 `reportTrue.html` 以 `git diff --no-index -U0` 比對,確認僅新增後覆蓋.
 
 ## 已知限制
@@ -245,6 +268,7 @@
 
 | 日期 | 變更 | 影響 |
 |---|---|---|
+| 2026-11-14 | jsdom 30.1.3 → 31.0.0(R-JSDOM-01;由外部依賴升級原則觸發,使用端無對應 Gitea 編號):canvas 後端、CSS 引擎、HTML 解析非同步三項破壞性變更;`tableHorizontalAlignmentCenter` 改以字串附加 `display: inline-table;`,不再經 `el.style` 賦值 | Node 下限不變(`^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0`);本套件未用 canvas、`getComputedStyle`、`runScripts`、`resources`、`readyState`;**行為變更一處**:md 內手寫帶 `style` 之 `<table>` 且啟用置中者,其 style 屬性文字改為使用者所寫之原樣(過去為 jsdom 序列化形態,如 `width: 100%;`、`#666`→`rgb(102, 102, 102)`),宣告語意不變,過去被丟棄之宣告(大寫屬性名、`mso-*`、`filter`、不合法者)現保留;未帶 style 之 table、其他輸出逐字不變(等價比對 md 414 筆之修前修後差異 102 筆中,97 筆僅 `<table style>` 屬性值不同、5 筆為 6000 層巢狀邊界之堆疊雜訊[兩版上限相同],見 R-JSDOM-01);新增依賴 bcp-47、bcp-47-match、parse5-parser-stream,移除 css-tree、@asamuzakjp/*、@csstools/* 等 |
 | 2026-11-09 | 表格標記擴充(R-TABLE-01、R-CODEFONT-01;Gitea #112、#113):styleDef 增列行內 code 依所在元素之字級;標記表內 code 繼承儲存格字級行高、`data-style-code`;逐欄樣式於有 rowspan/colspan 之表改依邏輯欄;新增 `data-merge-h`、`data-merge-v`、`data-merge-keep` | 新增屬性,未使用者不受影響;未使用新屬性且無 rowspan/colspan 之表輸出逐位元組不變(差異比對 180 份 + repo 既有 md 6 份,含 code 者僅差 `<code style>`);行為變更三處:①styleDef 多 36 行(`mergeStyle:true` 之 `<style>` 同);②元素以手寫 `style` 設字級者,其內行內 code 於瀏覽器改採該元素種類之 `fontSize*`;③有 rowspan/colspan 之表之逐欄樣式由「該列第 n 個」改為邏輯欄(過去錯欄/漏套者自此正確).下游 w-md2docx/w-html2docx 不需改(轉 docx 實測 13 項皆符) |
 | 2026-10-07 | katex 0.16.47 → 0.18.10 | 輸出之 KaTeX 內部 class(base、strut、sizing 等 20 個)加 `katex-` 前綴;styleSrcs 之 KaTeX CSS 改隨安裝版;下游自行載入 KaTeX CSS 或以其內部 class 寫樣式者須同步 |
 | 2026-10-07 | jsdom 29.1.1 → 30.1.2 | Node 下限 `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0`(Node 端轉換路徑;瀏覽器端不載入 jsdom);程式碼無須改 |

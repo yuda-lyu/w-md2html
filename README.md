@@ -17,6 +17,15 @@ To view some examples for more understanding, visit examples:
 
 ## Upgrade Notes
 
+### Behavior change with the jsdom 31 upgrade：`tableHorizontalAlignmentCenter` 不再改寫 table 既有之 `style` 宣告
+
+**行為變更**（`md2html`／`WMd2html`；僅影響 md 內手寫帶 `style` 之 `<table>` 且啟用 `tableHorizontalAlignmentCenter`〔`WMd2html` 預設為 `true`〕者）。
+- **依賴**：`jsdom` 由 30.1.3 升為 31.0.0（只在 Node 端轉換時載入，瀏覽器端不載入）。Node 下限與 30.x 相同：`^22.22.2 || ^24.15.0 || >=26.0.0`；jsdom 31 之 canvas 後端改為 `@napi-rs/canvas`、CSS 引擎重寫、HTML 解析改非同步，本套件皆未用到（不使用 canvas、`getComputedStyle`、`runScripts`、`resources`、`readyState`／`load`，`new JSDOM(html)` 於預設選項下回傳即為完整解析）。
+- **table 之 `style` 屬性原樣保留**：過去置中時以 DOM 之 CSS 引擎設 `display` 並整串重新序列化 `<table>` 之 `style`，結果隨 jsdom 版本而異（jsdom 31 起 `page-break-*` 會被改寫為 `break-*`、`-webkit-` 前綴被移除，而 Word 匯入只認 `page-break-*`；30.x 則會丟棄大寫之屬性名與 `mso-*`、`filter`、不合法之宣告）。現改為只在 `style` 末尾附加 `display: inline-table;`（前值未以 `;` 結尾則先補 `;`），使用者之其他宣告（含 `page-break-*`、`mso-*`、大小寫、引號、`#666` 等色彩寫法、`!important`）一律原樣輸出，與 DOM 實作無關，瀏覽器端與 Node 端輸出相同。
+- 使用者於 `<table>` 已設其他 `display` 者，附加之 `display: inline-table;` 後宣告覆寫之（該 `display` 帶 `!important` 時，附加之宣告亦帶 `!important`）；已為 `inline-table` 者不重複附加；`display:none`（無空白）之 table 仍先被移除。外包之 `<div>` 仍為 `style="text-align: center;"`。
+- **不變**：未帶 `style` 之 `<table>`（含 md 語法表格）輸出逐字不變（`style="display: inline-table;"`）；`tableHorizontalAlignmentCenter:false` 時 table 不動。
+- **影響**：帶 `style` 之 table 其屬性文字改為使用者所寫之原樣（過去為引擎序列化形態，如 `width: 100%;`、`border: 1px solid rgb(102, 102, 102);`），宣告之語意不變；過去被丟棄之宣告（大寫屬性名、`mso-*` 等）現會保留。
+
 ### Behavior change after 1.1.21：表格標記擴充（行內程式碼字級、逐欄樣式依邏輯欄、合併儲存格）
 
 **行為變更**（`md2html`／`WMd2html`；使用端需求見 Gitea #112、#113；新增標記屬性，未使用者不受影響）。

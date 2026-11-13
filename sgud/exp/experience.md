@@ -2,6 +2,15 @@
 
 本檔為執行工作時特有之累積經驗,留給後續之嘗試、執行與判斷,由agent自行編列、擴充與維護.
 
+## 2026-11-14 jsdom 30.1.3 → 31.0.0 升版(R-JSDOM-01)
+
+- **升 jsdom 先盤 `.style` 賦值站點**:31 之 CSS 引擎重寫後,`el.style.display = …` 會使整串 `style` 屬性由引擎重新序列化,結果與 30.x 不同(`page-break-*`→`break-*`、`-webkit-` 前綴被移除、字型名引號被拿掉、簡寫重排),且 30.x 本就靜默丟棄大寫屬性名、`mso-*`、`filter`、不合法宣告.語意上最要緊的是 `page-break-*`(Word 匯入只認它).整串被序列化之屬性不是契約,改以字串附加自己要加的宣告(`setInlineTable`),輸出即與 DOM 實作無關(jsdom 30.1.3、31.0.0、Chromium 156 皆相同).
+- **修前/修後等價比對之作法**:修前環境不動 repo——`./tmp/<夾>/env30/` 內 `npm i --prefix` 另裝舊版 jsdom,再複製 `src`(裸模組 `marked`、`dompurify` 等仍往上解析到 repo 根 `node_modules`,`jsdom` 解析到 `env30/node_modules`);同一份 harness 以 `SRC_DIR` 指向複本或現行 src.語料分組:既有測試輸入、script(行內/外部阻塞式/async/defer/module/document.write)、style(元素與 `style` 屬性 96 種寫法)、大型與畸形、深度階梯、WMd2html 自訂模板 26 型,另直接探測 jsdom 行為(建構子回傳之文件、CSSOM 序列化、選擇器、表格 API、`innerHTML` 序列化、TreeWalker).**先確認決定性**(同版同輸入跑兩次逐位元組相同)才比兩版.輸出差異再以腳本分類(是否僅 `<table style>` 屬性值不同、宣告集合經輕度正規化是否相同),人工只看剩下者.
+- **堆疊深度類差異不能憑單次判回歸**:同一個 6000 層輸入在同一行程內因案例順序(JIT 預熱後框架變小)成敗不定,前一輪曾因此誤報「31 才爆堆疊」.須「每次新行程」之階梯探測(30.1.3 與 31.0.0 皆 2200 層過、2300 層敗,失敗點在 parse5 `serializeElement` 遞迴),且各層重複 3 次.
+- **jsdom 31 之「HTML 解析改非同步」對本套件無影響**:未設 `runScripts`/`resources` 時 script 不載入不執行,`new JSDOM(html)` 回傳即完整(外部阻塞式 script、async/defer/module、`document.write`、link、`@import`、iframe 皆實測);只有 `readyState` 由 `loading` 變 `interactive`(本套件不讀).
+- DOMPurify 會去除屬性值頭尾空白,測試對 `style` 屬性之預期須以清洗後為準(`width:100%; ` 輸出為 `width:100%;`).
+- 瀏覽器端驗證不跑 `toolg/gDistRollup.mjs`(會清 `./dist`):另寫暫存腳本呼叫 `w-package-tools` 之 `rollupFile`,`fdTar` 指到 `./tmp/<夾>/`,再以 w-playwright 之 `launchChromium`(無頭)載入 UMD 實跑;`import` 其 src 須用 `pathToFileURL`(Windows 絕對路徑)。
+
 ## 2026-11-09 katex 0.19.1 複評(strict 與 peer)
 
 - 升版前以隔離複本看執行期相容,不動本套件:`./tmp/<名>/` 放 `src`、`test` 複本與 `node_modules/katex`(新版)、`node_modules/marked-katex-extension`(複本),其餘依賴由 `./tmp` 之上層 `node_modules` 解析;mocha 直接指向複本之 test.注意擴充套件須一併複製,否則它仍 import 到本套件之舊 katex,等於沒測.
