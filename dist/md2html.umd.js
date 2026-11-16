@@ -1,5 +1,5 @@
 /*!
- * md2html v1.1.33
+ * md2html v1.1.34
  * (c) 2018-2021 yuda-lyu(semisphere)
  * Released under the MIT License.
  */
