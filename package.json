@@ -1,6 +1,6 @@
 {
   "name": "w-md2html",
-  "version": "1.1.48",
+  "version": "1.1.49",
   "main": "dist/w-md2html.umd.js",
   "dependencies": {
     "dompurify": "^3.4.18",
@@ -11,12 +11,12 @@
     "marked-footnote": "^1.4.0",
     "marked-highlight": "^2.2.4",
     "marked-katex-extension": "5.1.13",
-    "w-image-proc": "^1.0.57",
-    "wsemi": "^1.9.76"
+    "w-image-proc": "^1.0.58",
+    "wsemi": "^1.9.77"
   },
   "devDependencies": {
     "sharp": "^0.35.5",
-    "w-package-tools": "^1.1.30"
+    "w-package-tools": "^1.1.31"
   },
   "scripts": {
     "test": "mocha --parallel \"test/*.test.mjs\" --timeout 180000",
